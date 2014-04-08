@@ -6,7 +6,7 @@ include theos/makefiles/common.mk
 
 TWEAK_NAME = SaveGram
 SaveGram_FILES = SaveGram.xm
-SaveGram_FRAMEWORKS = UIKit AssetsLibrary
+SaveGram_FRAMEWORKS = UIKit
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 

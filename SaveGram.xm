@@ -24,46 +24,43 @@
 			NSURL *imageURL = [post imageURLForImageVersion:[%c(IGPost) fullSizeImageVersionForDevice]];
 			UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
 
-			UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil);
-			NSLog(@"[SaveGram] Finished saving photo (%@) to photo library!", image);
+			UIImageWriteToSavedPhotosAlbum(image, nil, NULL, NULL);
+			NSLog(@"[SaveGram] Finished saving photo (%@) to photo library.", image);
 		}
 
 		else {
 			NSURL *videoURL = [post videoURLForVideoVersion:[%c(IGPost) fullSizeVideoVersionForDevice]];
-			// NSString *videoPath = [[[NSBundle mainBundle] bundlePath] stringByAppendingPathComponent:@"/Documents/SaveGram/"];
-			NSString *videoPath = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/SaveGram"];
-			NSString *videoFilePath = [videoPath stringByAppendingString:@"/movie"];
-			NSFileManager *manager = [NSFileManager defaultManager];
+			NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+				NSFileManager *fileManager = [NSFileManager defaultManager];
+			    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
+			    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
+			    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
 
-			NSError __block *videoError;
-		    [manager createDirectoryAtPath:videoPath withIntermediateDirectories:YES attributes:nil error:&videoError];
-			BOOL wrote = [[NSData dataWithContentsOfURL:videoURL] writeToFile:videoFilePath atomically:YES];
+				UISaveVideoAtPathToSavedPhotosAlbum(videoSavedURL.path, self, @selector(savegram_removeVideoAtPath:didFinishSavingWithError:contextInfo:), NULL);
+			}];
 
-			UISaveVideoAtPathToSavedPhotosAlbum(videoFilePath, nil, nil, nil);
-			if (videoError) {
-				NSLog(@"[SaveGram] %@ failed to save video (from %@) to photo library: %@", wrote ? @"Happily" : @"Terribly", videoFilePath, videoError);
-			}
-
-			else {
-				NSLog(@"[SaveGram] %@ saved video to photo library!", wrote ? @"Happily" : @"Terribly");
-			}
-
-			dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-				BOOL unwrote = [manager removeItemAtPath:videoPath error:&videoError];
-				if (videoError) {
-					NSLog(@"[SaveGram] %@ failed to delete video from %@: %@", unwrote ? @"Happily" : @"Terribly", videoPath, videoError);
-				}
-
-				else {
-					NSLog(@"[SaveGram] %@ deleted video from temporary save location!", unwrote ? @"Happily" : @"Terribly");
-				}
-			});
+			[videoDownloadTask resume];
 		}
 	}
 
 	else {
 		%orig(title);
 	}
+}
+
+%new - (void)savegram_removeVideoAtPath:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo {
+	if (error) {
+		NSLog(@"[SaveGram] Couldn't save video to photo library: %@", error);
+		return;
+	}
+
+	[[NSFileManager defaultManager] removeItemAtPath:videoPath error:&error];
+	if (error) {
+		NSLog(@"[SaveGram] Couldn't remove video from temporary location: %@", error);
+		return;
+	}
+
+	NSLog(@"[SavedGram] Finished saving video to photo library.");
 }
 
 %end

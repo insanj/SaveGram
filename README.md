@@ -1,7 +1,7 @@
 SaveGram
 =======================
 
-Save images from Instagram. **Currently supports Instagram version 5.0.8**.
+Save posts from Instagram. **Currently supports Instagram version 5.0.8**.
 
 ---------------------------------------
 [Creative Commons Attribution-NonCommercial 3.0 United States License](http://creativecommons.org/licenses/by-nc/3.0/us/) as of 2014:
