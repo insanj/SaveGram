@@ -2,7 +2,7 @@ Package: com.insanj.savegram
 Name: SaveGram
 Pre-Depends: firmware (>= 7.0)
 Depends: mobilesubstrate
-Version: 0.1
+Version: 1.0
 Architecture: iphoneos-arm
 Description: Save posts from Instagram.
 Maintainer: Julian Weiss <insanjmail@insanj.com>
