@@ -17,29 +17,54 @@
 
 -(void)actionSheetDismissedWithButtonTitled:(NSString *)title {
 	if ([title isEqualToString:@"Save"]) {
-		IGFeedItem *post = self.feedItem;
-		NSLog(@"[SaveGram] Detected dismissal of action sheet with Save option, trying to save %@...", post);
 
-		if (post.mediaType == 1) {
-			NSURL *imageURL = [post imageURLForImageVersion:[%c(IGPost) fullSizeImageVersionForDevice]];
-			UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
+		// Instead of opting for intelligent version checking when launching Instagram
+		// (ala SlickGram), this segment uses try/catches to prevent crashing and only
+		// notify the user when things /actually/ aren't working.
+		@try{
+			IGFeedItem *post = self.feedItem;
+			NSLog(@"[SaveGram] Detected dismissal of action sheet with Save option, trying to save %@...", post);
 
-			UIImageWriteToSavedPhotosAlbum(image, nil, NULL, NULL);
-			NSLog(@"[SaveGram] Finished saving photo (%@) to photo library.", image);
-		}
+			if (post.mediaType == 1) {
+				NSURL *imageURL = [post imageURLForImageVersion:[%c(IGPost) fullSizeImageVersionForDevice]];
+				UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
 
-		else {
-			NSURL *videoURL = [post videoURLForVideoVersion:[%c(IGPost) fullSizeVideoVersionForDevice]];
-			NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
-				NSFileManager *fileManager = [NSFileManager defaultManager];
-			    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
-			    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
-			    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
+				UIImageWriteToSavedPhotosAlbum(image, nil, NULL, NULL);
+				NSLog(@"[SaveGram] Finished saving photo (%@) to photo library.", image);
+			}
 
-				UISaveVideoAtPathToSavedPhotosAlbum(videoSavedURL.path, self, @selector(savegram_removeVideoAtPath:didFinishSavingWithError:contextInfo:), NULL);
-			}];
+			else {
+			//	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
+			//	NSComparisonResult *comparison = [version compare:@"5.0.9" options:NSNumericSearch];
+			//	if (version == NSOrderedSame || version == NSOrderedDescending)
 
-			[videoDownloadTask resume];
+				int videoVersion;
+				if ([%c(IGPost) respondsToSelector:@selector(fullSizeVideoVersionForDevice)]) {
+					videoVersion = [%c(IGPost) fullSizeVideoVersionForDevice];
+				}
+
+				else {
+					videoVersion = [%c(IGPost) videoVersionForCurrentNetworkConditions];
+				}
+
+				NSURL *videoURL =  [post videoURLForVideoVersion:videoVersion];
+				NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+					NSFileManager *fileManager = [NSFileManager defaultManager];
+				    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
+				    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
+				    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
+
+					UISaveVideoAtPathToSavedPhotosAlbum(videoSavedURL.path, self, @selector(savegram_removeVideoAtPath:didFinishSavingWithError:contextInfo:), NULL);
+				}];
+
+				[videoDownloadTask resume];
+			}
+		} // end @try
+
+		@catch (NSException *e) {
+			UIAlertView *errorView = [[UIAlertView alloc] initWithTitle:@"Oops!" message:[NSString stringWithFormat:@"Looks like SaveGram had trouble saving this post. Please send the following error message to @insanj: %@", e.reason] delegate:nil cancelButtonTitle:@"Dimiss" otherButtonTitles:nil];
+			[errorView show];
+			[errorView release];
 		}
 	}
 

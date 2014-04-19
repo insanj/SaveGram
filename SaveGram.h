@@ -3,7 +3,8 @@
 
 @interface IGPost
 @property (nonatomic, readwrite) int mediaType; 		// 1 = picture, 2 = video
-+ (int)fullSizeVideoVersionForDevice;
++ (int)videoVersionForCurrentNetworkConditions;  // Introducted in 5.0.9
++ (int)fullSizeVideoVersionForDevice;			// Removed in 5.0.9
 + (int)fullSizeImageVersionForDevice;
 - (NSURL *)imageURLForImageVersion:(int)version;
 - (NSURL *)videoURLForVideoVersion:(int)version;
