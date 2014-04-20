@@ -1,7 +1,7 @@
 SaveGram
 =======================
 
-Save posts from Instagram. **Currently supports Instagram version 5.0.8-5.0.9**.
+Save posts from Instagram. **Currently supports all versions of iOS 7 and Instagram versions 5.0.8-5.0.9**.
 
 ---------------------------------------
 [Creative Commons Attribution-NonCommercial 3.0 United States License](http://creativecommons.org/licenses/by-nc/3.0/us/) as of 2014:
