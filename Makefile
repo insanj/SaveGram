@@ -10,5 +10,7 @@ SaveGram_FRAMEWORKS = UIKit
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
+before-stage::
+	find . -name ".DS_Store" -delete
 internal-after-install::
 	install.exec "killall -9 Instagram"
