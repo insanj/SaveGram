@@ -1,4 +1,4 @@
-#import "SaveGram.h"
+ #import "SaveGram.h"
 
 #define SGLOG(fmt, ...) NSLog((@"[SaveGram] %s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 
@@ -124,7 +124,90 @@ llllllll    eeeeeeeeeeeeee      gggggggg::::::g  aaaaaaaaaa  aaaa   cccccccccccc
 
 %end
 
-%end // %group IGActionSheet
+%end // %group FirstSupportPhase
+
+%group SecondSupportPhase
+
+%hook IGActionSheet
+
++ (void)showWithDelegate:(id)arg1 {
+	[self addButtonWithTitle:@"Save" style:0];
+	%orig(arg1);
+}
+
++ (void)showWithCallback:(id)arg1 {
+	[self addButtonWithTitle:@"Save" style:0];
+	%orig(arg1);
+}
+
+%end
+
+%hook IGFeedItemActionCell
+
+- (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
+	if ([title isEqualToString:@"Save"]) {
+		// Instead of opting for intelligent version checking when launching Instagram
+		// (ala SlickGram), this segment uses try/catches to prevent crashing and only
+		// notify the user when things /actually/ aren't working.
+		@try{
+			IGFeedItem *post = self.feedItem;
+			NSLog(@"[SaveGram] Detected dismissal of action sheet with Save option, trying to save %@...", post);
+
+			if (post.mediaType == 1) {
+				NSURL *imageURL =[post imageURLForFullSizeImage];
+				UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
+
+				UIImageWriteToSavedPhotosAlbum(image, nil, NULL, NULL);
+				NSLog(@"[SaveGram] Finished saving photo (%@) to photo library.", image);
+			}
+
+			else {
+				NSInteger videoVersion = [%c(IGPost) videoVersionForCurrentNetworkConditions];
+
+				NSURL *videoURL =  [post videoURLForVideoVersion:videoVersion];
+				NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+					NSFileManager *fileManager = [NSFileManager defaultManager];
+				    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
+				    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
+				    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
+
+					UISaveVideoAtPathToSavedPhotosAlbum(videoSavedURL.path, self, @selector(savegram_removeVideoAtPath:didFinishSavingWithError:contextInfo:), NULL);
+				}];
+
+				[videoDownloadTask resume];
+			}
+		} // end @try
+
+		@catch (NSException *e) {
+			UIAlertView *errorView = [[UIAlertView alloc] initWithTitle:@"Oops!" message:[NSString stringWithFormat:@"Looks like SaveGram had trouble saving this post. Please send the following error message to @insanj: %@", e.reason] delegate:nil cancelButtonTitle:@"Dimiss" otherButtonTitles:nil];
+			[errorView show];
+			[errorView release];
+		}
+	}
+
+	else {
+		%orig(title);
+	}
+}
+
+%new - (void)savegram_removeVideoAtPath:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo {
+	if (error) {
+		NSLog(@"[SaveGram] Couldn't save video to photo library: %@", error);
+		return;
+	}
+
+	[[NSFileManager defaultManager] removeItemAtPath:videoPath error:&error];
+	if (error) {
+		NSLog(@"[SaveGram] Couldn't remove video from temporary location: %@", error);
+		return;
+	}
+
+	NSLog(@"[SaveGram] Finished saving video to photo library.");
+}
+
+%end
+
+%end // %group SecondSupportPhase
 
 /*                                                                                                                                                                                                                                                                    
                                                                                                                             tttt          
@@ -147,25 +230,25 @@ c:::::::cccccc:::::cu:::::::::::::::uur:::::r             r:::::r            e::
 
 @interface IGFeedItemActionCell (SaveGram)
 
-- (void)savegram_makeSurePhotosAlbumWithNameExists:(NSString *)albumName;
+// - (void)savegram_makeSurePhotosAlbumWithNameExists:(NSString *)albumName;
 // - (void)savegram_createPhotosAlbumWithName:(NSString *)albumName;
 - (void)savegram_saveImageData:(NSData *)imageData toPhotosAlbumWithName:(NSString *)albumName;
 - (void)savegram_saveVideoAtPath:(NSString *)videoPath toPhotosAlbumWithName:(NSString *)albumName;
 
 @end
 
-%group SecondSupportPhase
+%group ThirdSupportPhase
 
 %hook IGActionSheet
 
-+ (void)showWithDelegate:(id)arg1 {
-	[self addButtonWithTitle:@"Save" style:0];
-	%orig(arg1);
-}
+/*- (void)setButtons:(id)arg1 {
+	NSArray *actionSheetButtons = arg1;
+	%orig([actionSheetButtons arrayByAddingObject:[]])
+}*/
 
-+ (void)showWithCallback:(id)arg1 {
+ - (void)show {
 	[self addButtonWithTitle:@"Save" style:0];
-	%orig(arg1);
+	%orig();
 }
 
 %end
@@ -215,10 +298,7 @@ c:::::::cccccc:::::cu:::::::::::::::uur:::::r             r:::::r            e::
 	}
 }
 
-%new - (void)savegram_makeSurePhotosAlbumWithNameExists:(NSString *)albumName {
-	// @autoreleasepool {
-	//	ALAssetsLibrary *assetsLibrary = [[ALAssetsLibrary alloc] init];
-
+static inline void savegram_makeSurePhotosAlbumWithNameExists(NSString *albumName) {
 	// Check if Photos album exists
 	[kSaveGramAssetsLibrary enumerateGroupsWithTypes:ALAssetsGroupAlbum usingBlock:^(ALAssetsGroup *group, BOOL *stop) {
       if ([[group valueForProperty:ALAssetsGroupPropertyName] isEqualToString:albumName]) {
@@ -239,7 +319,7 @@ c:::::::cccccc:::::cu:::::::::::::::uur:::::r             r:::::r            e::
 }
 
 %new - (void)savegram_saveImageData:(NSData *)imageData toPhotosAlbumWithName:(NSString *)albumName {
-	[self savegram_makeSurePhotosAlbumWithNameExists:albumName];
+	savegram_makeSurePhotosAlbumWithNameExists(albumName);
 
 	// Save Image (from imageData) to assets album, then to Photos album
 	[kSaveGramAssetsLibrary writeImageDataToSavedPhotosAlbum:imageData metadata:nil completionBlock:^(NSURL *assetURL, NSError *error) {
@@ -258,10 +338,10 @@ c:::::::cccccc:::::cu:::::::::::::::uur:::::r             r:::::r            e::
 	}];
 }
 
-%new  - (void)savegram_saveVideoAtPath:(NSURL *)videoPath toPhotosAlbumWithName:(NSString *)albumName { 
-	[self savegram_makeSurePhotosAlbumWithNameExists:albumName];
+%new  - (void)savegram_saveVideoAtPath:(NSURL *)videoPath toPhotosAlbumWithName:(NSString *)albumName {
+	savegram_makeSurePhotosAlbumWithNameExists(albumName);
 
-		// Save Video (at videoPath) to assets album, then to Photos album
+	// Save Video (at videoPath) to assets album, then to Photos album
 	[kSaveGramAssetsLibrary writeVideoAtPathToSavedPhotosAlbum:videoPath completionBlock:^(NSURL *assetURL, NSError *error) {
 		if (error && error.code != 0) {
 			SGLOG(@"Couldn't save video to Photos albums (%@): %@", kSaveGramAssetsLibrary, [error localizedDescription]);
@@ -286,7 +366,7 @@ c:::::::cccccc:::::cu:::::::::::::::uur:::::r             r:::::r            e::
 
 %end
 
-%end // %group SecondSupportPhase
+%end // %group ThirdupportPhase
 
 /*                                                                                                     
                                                                                                          dddddddd
@@ -317,8 +397,13 @@ s::::::::::::::s h:::::h     h:::::ha:::::aaaa::::::a r:::::r             e:::::
 		%init(FirstSupportPhase);
 	}
 
-	else  {
-		NSLog(@"[SaveGram] Detected Instagram running on supported new version %@.", version);
+	else if (supportedVersionComparisonResult == NSOrderedSame) {
+		NSLog(@"[SaveGram] Detected Instagram running on supported version %@.", version);
 		%init(SecondSupportPhase);
+	}
+
+	else {
+		NSLog(@"[SaveGram] Detected Instagram running on newest supported version %@.", version);
+		%init(ThirdSupportPhase);
 	}
 }
