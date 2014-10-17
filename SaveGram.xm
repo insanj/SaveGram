@@ -64,10 +64,6 @@ llllllll    eeeeeeeeeeeeee      gggggggg::::::g  aaaaaaaaaa  aaaa   cccccccccccc
 			}
 
 			else {
-			//	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-			//	NSComparisonResult *comparison = [version compare:@"5.0.9" options:NSNumericSearch];
-			//	if (version == NSOrderedSame || version == NSOrderedDescending)
-
 				int videoVersion;
 				if ([%c(IGPost) respondsToSelector:@selector(fullSizeVideoVersionForDevice)]) {
 					videoVersion = [%c(IGPost) fullSizeVideoVersionForDevice];
@@ -224,15 +220,6 @@ c:::::::cccccc:::::cu:::::::::::::::uur:::::r             r:::::r            e::
     cccccccccccccccc    uuuuuuuu  uuuurrrrrrr             rrrrrrr                eeeeeeeeeeeeee    nnnnnn    nnnnnn          ttttttttttt  
  */
 
-@interface IGFeedItemActionCell (SaveGram)
-
-// - (void)savegram_makeSurePhotosAlbumWithNameExists:(NSString *)albumName;
-// - (void)savegram_createPhotosAlbumWithName:(NSString *)albumName;
-- (void)savegram_saveImageData:(NSData *)imageData toPhotosAlbumWithName:(NSString *)albumName;
-- (void)savegram_saveVideoAtPath:(NSString *)videoPath toPhotosAlbumWithName:(NSString *)albumName;
-
-@end
-
 %group ThirdSupportPhase
 
 static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
@@ -259,12 +246,6 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 
 			IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
 			[postImageAssetWriter writeToInstagramAlbum];
-
-			/*[kSaveGramAssetsLibrary saveImageData:[NSData dataWithContentsOfURL:imageURL] toAlbum:@"Saved from Instagram" metadata: completion:^(NSURL *assetURL, NSError *error) {
-				SGLog(@"Saved image (assetURL: %@, error: %@)", assetURL, error);
-			}  failure:^(NSError *error) {
-				[[[[UIAlertView alloc] initWithTitle:@"Uh-oh" message:[@"SaveGram had trouble saving this image: " stringByAppendingString:[error localizedDescription]] delegate:nil cancelButtonTitle:@"Dismiss" otherButtonTitles:nil] autorelease] show];
-			}];*/
 		}
 
 		else {
@@ -278,12 +259,6 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 			    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
 
 			    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completionBlock:nil];
-
-				/*[kSaveGramAssetsLibrary saveVideo:videoSavedURL toAlbum:@"Saved from Instagram" completion:^(NSURL *assetURL, NSError *error) {
-					SGLog(@"Saved video (assetURL: %@, error: %@)", assetURL, error);
-				}  failure:^(NSError *error) {
-					[[[[UIAlertView alloc] initWithTitle:@"Uh-oh" message:[@"SaveGram had trouble saving this video: " stringByAppendingString:[error localizedDescription]] delegate:nil cancelButtonTitle:@"Dismiss" otherButtonTitles:nil] autorelease] show];
-				}];*/
 			}];
 
 			[videoDownloadTask resume];

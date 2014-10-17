@@ -1,5 +1,7 @@
+#import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <AssetsLibrary/AssetsLibrary.h>
+#import "substrate.h"
 
 @interface IGPost
 
