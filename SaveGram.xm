@@ -1,5 +1,4 @@
 #import "SaveGram.h"
-#import "ALAssetsLibrary-CustomPhotoAlbum/ALAssetsLibrary-CustomPhotoAlbum.h"
 
 #define SGLOG(fmt, ...) NSLog((@"[SaveGram] %s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 
@@ -148,14 +147,14 @@ llllllll    eeeeeeeeeeeeee      gggggggg::::::g  aaaaaaaaaa  aaaa   cccccccccccc
 		// notify the user when things /actually/ aren't working.
 		@try{
 			IGFeedItem *post = self.feedItem;
-			NSLog(@"[SaveGram] Detected dismissal of action sheet with Save option, trying to save %@...", post);
+			SGLOG(@"Detected dismissal of action sheet with Save option, trying to save %@...", post);
 
 			if (post.mediaType == 1) {
 				NSURL *imageURL =[post imageURLForFullSizeImage];
 				UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
 
 				UIImageWriteToSavedPhotosAlbum(image, nil, NULL, NULL);
-				NSLog(@"[SaveGram] Finished saving photo (%@) to photo library.", image);
+				SGLOG(@"Finished saving photo (%@) to photo library.", image);
 			}
 
 			else {
@@ -189,17 +188,17 @@ llllllll    eeeeeeeeeeeeee      gggggggg::::::g  aaaaaaaaaa  aaaa   cccccccccccc
 
 %new - (void)savegram_removeVideoAtPath:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo {
 	if (error) {
-		NSLog(@"[SaveGram] Couldn't save video to photo library: %@", error);
+		SGLOG(@"Couldn't save video to photo library: %@", error);
 		return;
 	}
 
 	[[NSFileManager defaultManager] removeItemAtPath:videoPath error:&error];
 	if (error) {
-		NSLog(@"[SaveGram] Couldn't remove video from temporary location: %@", error);
+		SGLOG(@"Couldn't remove video from temporary location: %@", error);
 		return;
 	}
 
-	NSLog(@"[SaveGram] Finished saving video to photo library.");
+	SGLOG(@"Finished saving video to photo library.");
 }
 
 %end
@@ -255,14 +254,17 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 		SGLOG(@"Detected dismissal of action sheet with Save option, trying to save %@...", post);
 
 		if (post.mediaType == 1) {
-			NSURL *imageURL = [post imageURLForFullSizeImage];
-			UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
+			NSURL *postImageURL = [post imageURLForFullSizeImage];
+			UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:postImageURL]];
 
-			[kSaveGramAssetsLibrary saveImage:postImage toAlbum:@"Saved from Instagram" completion:^(NSURL *assetURL, NSError *error) {
+			IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
+			[postImageAssetWriter writeToInstagramAlbum];
+
+			/*[kSaveGramAssetsLibrary saveImageData:[NSData dataWithContentsOfURL:imageURL] toAlbum:@"Saved from Instagram" metadata: completion:^(NSURL *assetURL, NSError *error) {
 				SGLog(@"Saved image (assetURL: %@, error: %@)", assetURL, error);
 			}  failure:^(NSError *error) {
 				[[[[UIAlertView alloc] initWithTitle:@"Uh-oh" message:[@"SaveGram had trouble saving this image: " stringByAppendingString:[error localizedDescription]] delegate:nil cancelButtonTitle:@"Dismiss" otherButtonTitles:nil] autorelease] show];
-			}];
+			}];*/
 		}
 
 		else {
@@ -275,12 +277,13 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 			    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
 			    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
 
+			    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completionBlock:nil];
 
-				[kSaveGramAssetsLibrary saveVideo:videoSavedURL toAlbum:@"Saved from Instagram" completion:^(NSURL *assetURL, NSError *error) {
+				/*[kSaveGramAssetsLibrary saveVideo:videoSavedURL toAlbum:@"Saved from Instagram" completion:^(NSURL *assetURL, NSError *error) {
 					SGLog(@"Saved video (assetURL: %@, error: %@)", assetURL, error);
 				}  failure:^(NSError *error) {
 					[[[[UIAlertView alloc] initWithTitle:@"Uh-oh" message:[@"SaveGram had trouble saving this video: " stringByAppendingString:[error localizedDescription]] delegate:nil cancelButtonTitle:@"Dismiss" otherButtonTitles:nil] autorelease] show];
-				}];
+				}];*/
 			}];
 
 			[videoDownloadTask resume];
@@ -294,7 +297,7 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 
 %end
 
-%end // %group ThirdupportPhase
+%end // %group ThirdSupportPhase
 
 /*                                                                                                     
                                                                                                          dddddddd
@@ -321,17 +324,17 @@ s::::::::::::::s h:::::h     h:::::ha:::::aaaa::::::a r:::::r             e:::::
 	NSComparisonResult supportedVersionComparisonResult = [version compare:@"6.1.2" options:NSNumericSearch];
 
 	if (supportedVersionComparisonResult == NSOrderedDescending) {
-		NSLog(@"[SaveGram] Detected Instagram running on newest supported version %@.", version);
+		SGLOG(@"Detected Instagram running on newest supported version %@.", version);
 		%init(ThirdSupportPhase);
 	}
 
 	else if (supportedVersionComparisonResult == NSOrderedSame) {
-		NSLog(@"[SaveGram] Detected Instagram running on supported version %@.", version);
+		SGLOG(@"Detected Instagram running on supported version %@.", version);
 		%init(SecondSupportPhase);
 	}
 
 	else {
-		NSLog(@"[SaveGram] Detected Instagram running on supported old version %@.", version);
+		SGLOG(@"Detected Instagram running on supported old version %@.", version);
 		%init(FirstSupportPhase);
 	}
 }

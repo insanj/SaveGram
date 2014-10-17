@@ -55,3 +55,20 @@
 -(void)setActionDelegate:(id)delegate;
 -(void)setButtons:(NSMutableArray *)arg1;
 @end
+
+@interface IGAssetWriter : NSObject {
+	NSMutableDictionary* _metadata; 
+}
+
+@property (nonatomic,retain) UIImage *image;
+// @property (nonatomic,retain) CLLocation* location; 				//@synthesize location=_location - In the implementation block
++(void)writeVideo:(id)arg1 toInstagramAlbum:(BOOL)arg2 completionBlock:(id)arg3;
++(void)writeVideoToCameraRoll:(id)arg1;
++(void)writeVideoToInstagramAlbum:(id)arg1 completionBlock:(id)arg2;
+-(id)initWithImage:(id)arg1 metadata:(id)arg2;
+-(void)writeToInstagramAlbum:(BOOL)arg1;
+-(void)showLibraryAccessMessage;
+-(void)writeToCameraRoll;
+-(void)writeToInstagramAlbum;
+-(id)init;
+@end

@@ -5,9 +5,8 @@ ARCHS = armv7 armv7s arm64
 include theos/makefiles/common.mk
 
 TWEAK_NAME = SaveGram
-SaveGram_FILES = SaveGram.xm ALAssetsLibrary-CustomPhotoAlbum/ALAssetsLibrary-CustomPhotoAlbum.m
+SaveGram_FILES = SaveGram.xm
 SaveGram_FRAMEWORKS = UIKit AssetsLibrary MobileCoreServices
-ALAssetsLibrary-CustomPhotoAlbum.m_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
