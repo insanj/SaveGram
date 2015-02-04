@@ -14,7 +14,7 @@
 // 6.1.2
 -(id)imageURLForFullSizeImage;
 
-// 6.1.5
+// 6.5.0
 -(id)imageURLForImageIndex:(NSInteger)index;
 
 - (NSURL *)imageURLForImageVersion:(int)version;
