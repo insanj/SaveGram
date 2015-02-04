@@ -3,7 +3,7 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import "substrate.h"
 
-@interface IGPost
+@interface IGPost : NSObject
 
 // iOS 7
 @property (nonatomic, readwrite) int mediaType; 		// 1 = picture, 2 = video
@@ -11,8 +11,11 @@
 + (int)fullSizeVideoVersionForDevice;			// Removed in 5.0.9
 + (int)fullSizeImageVersionForDevice;
 
-// iOS 8
+// 6.1.2
 -(id)imageURLForFullSizeImage;
+
+// 6.1.5
+-(id)imageURLForImageIndex:(NSInteger)index;
 
 - (NSURL *)imageURLForImageVersion:(int)version;
 - (NSURL *)videoURLForVideoVersion:(int)version;

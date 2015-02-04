@@ -146,7 +146,7 @@ llllllll    eeeeeeeeeeeeee      gggggggg::::::g  aaaaaaaaaa  aaaa   cccccccccccc
 			SGLOG(@"Detected dismissal of action sheet with Save option, trying to save %@...", post);
 
 			if (post.mediaType == 1) {
-				NSURL *imageURL =[post imageURLForFullSizeImage];
+				NSURL *imageURL = [post imageURLForFullSizeImage];
 				UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
 
 				UIImageWriteToSavedPhotosAlbum(image, nil, NULL, NULL);
@@ -241,7 +241,15 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 		SGLOG(@"Detected dismissal of action sheet with Save option, trying to save %@...", post);
 
 		if (post.mediaType == 1) {
-			NSURL *postImageURL = [post imageURLForFullSizeImage];
+			NSURL *postImageURL;
+			if ([post respondsToSelector:@selector(imageURLForFullSizeImage)]) {
+				postImageURL = [post imageURLForFullSizeImage];
+			}
+
+			else {
+				postImageURL = [post imageURLForImageIndex:0]; // in 6.1.5 all URL methods require a size, it seems that this set of images begins with the largest, and progress to smaller dimensions from the 0th index
+			}
+
 			UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:postImageURL]];
 
 			IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
