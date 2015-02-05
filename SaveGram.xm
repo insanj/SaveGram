@@ -36,8 +36,9 @@ llllllll    eeeeeeeeeeeeee      gggggggg::::::g  aaaaaaaaaa  aaaa   cccccccccccc
 // but if it was, the .topMostViewController or .delegate properties might be nice
 - (void)showWithTitle:(NSString *)title {
 	SGLOG(@"Detected action sheet from item, adding save option...");
-	
+
 	[self addButtonWithTitle:@"Save" style:0];
+
 	%orig(title);
 }
 
@@ -124,11 +125,13 @@ llllllll    eeeeeeeeeeeeee      gggggggg::::::g  aaaaaaaaaa  aaaa   cccccccccccc
 
 + (void)showWithDelegate:(id)arg1 {
 	[self addButtonWithTitle:@"Save" style:0];
+
 	%orig(arg1);
 }
 
 + (void)showWithCallback:(id)arg1 {
 	[self addButtonWithTitle:@"Save" style:0];
+
 	%orig(arg1);
 }
 
@@ -227,7 +230,10 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 %hook IGActionSheet
 
  - (void)show {
-	[self addButtonWithTitle:@"Save" style:0];
+	if ([[[self.buttons objectAtIndex:0] currentTitle] isEqualToString:@"Report Inappropriate"] || [[[self.buttons objectAtIndex:0] currentTitle] isEqualToString:@"Delete"]) {
+		[self addButtonWithTitle:@"Save" style:0];
+	}
+	
 	%orig();
 }
 
