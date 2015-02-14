@@ -227,7 +227,10 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 %hook IGActionSheet
 
  - (void)show {
-	[self addButtonWithTitle:@"Save" style:0];
+ 	if ([[[self.buttons firstObject] currentTitle] isEqualToString:@"Report Inappropriate"] || [[[self.buttons firstObject] currentTitle] isEqualToString:@"Delete"]) {
+		[self addButtonWithTitle:@"Save" style:0];
+	}
+
 	%orig();
 }
 
