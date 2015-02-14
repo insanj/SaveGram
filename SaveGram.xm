@@ -247,7 +247,7 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 			}
 
 			else {
-				postImageURL = [post imageURLForImageIndex:0]; // in 6.5 all URL methods require a size, it seems that this set of images begins with the largest; smaller dimensions proceed from the 0th index
+				postImageURL = [post imageURLForSize:CGSizeMake(2048, 2048)];
 			}
 
 			UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:postImageURL]];

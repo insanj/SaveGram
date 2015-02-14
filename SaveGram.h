@@ -16,6 +16,7 @@
 
 // 6.5.0
 -(id)imageURLForImageIndex:(NSInteger)index;
+-(id)imageURLForSize:(CGSize)size;
 
 - (NSURL *)imageURLForImageVersion:(int)version;
 - (NSURL *)videoURLForVideoVersion:(int)version;
