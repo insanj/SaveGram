@@ -1,6 +1,6 @@
-## SaveGram
+## [SaveGram](http://apt.thebigboss.org/mobileweb/onepackage.php?bundleid=com.insanj.savegram&db=0)
 
-Save posts from Instagram. **Currently supports iOS 7.x-8.x and Instagram versions 5.0.8-6.5.0**.
+Save photos and videos from Instagram. **Currently supports versions 5.0.8-6.5.2**. Built to be lightweight and tightly integrated with Instagram's existing functionality, and with over 21k active users and unbeatable update layover, SaveGram is a staple on every photo-sharing jailbroken device.
 
 ## [License](LICENSE.md)
 
