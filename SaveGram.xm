@@ -236,6 +236,52 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 
 %end
 
+%hook IGDirectedPostViewController
+
+- (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
+	if ([title isEqualToString:@"Save"]) {
+		IGPost *post = self.post;
+		SGLOG(@"Detected dismissal of action sheet with Save option, trying to save %@...", post);
+
+		if (post.mediaType == 1) {
+			NSURL *postImageURL;
+			if ([post respondsToSelector:@selector(imageURLForFullSizeImage)]) {
+				postImageURL = [post imageURLForFullSizeImage];
+			}
+
+			else {
+				postImageURL = [post imageURLForSize:CGSizeMake(2048, 2048)];
+			}
+
+			UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:postImageURL]];
+
+			IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
+			[postImageAssetWriter writeToInstagramAlbum];
+		}
+
+		else {
+			NSInteger videoVersion = [%c(IGPost) videoVersionForCurrentNetworkConditions];
+
+			NSURL *videoURL =  [post videoURLForVideoVersion:videoVersion];
+			NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+				NSFileManager *fileManager = [NSFileManager defaultManager];
+			    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
+			    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
+			    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
+
+			    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completionBlock:nil];
+			}];
+
+			[videoDownloadTask resume];
+		}
+	}
+
+	else {
+		%orig(title);
+	}
+}
+%end
+
 %hook IGFeedItemActionCell
 
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
