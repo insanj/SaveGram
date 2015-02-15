@@ -2,6 +2,11 @@
 
 #define SGLOG(fmt, ...) NSLog((@"[SaveGram] %s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 
+static NSString *localizableSaveKey = @"Save", *localizableReportKey = @"Report Inappropriate", *localizableDeleteKey = @"Delete";
+static inline NSString *localizedStringForKey(NSString *key) {
+	return [[NSBundle mainBundle] localizedStringForKey:key value:key table:@"Localizable"];
+}
+
 /* 
 lllllll                                                                                                      
 l:::::l                                                                                                      
@@ -227,8 +232,8 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 %hook IGActionSheet
 
  - (void)show {
- 	if ([[[self.buttons firstObject] currentTitle] isEqualToString:@"Report Inappropriate"] || [[[self.buttons firstObject] currentTitle] isEqualToString:@"Delete"]) {
-		[self addButtonWithTitle:@"Save" style:0];
+ 	if ([[[self.buttons firstObject] currentTitle] isEqualToString:localizedStringForKey(localizableReportKey)] || [[[self.buttons firstObject] currentTitle] isEqualToString:localizableDeleteKey]) {
+		[self addButtonWithTitle:localizedStringForKey(localizableSaveKey) style:0];
 	}
 
 	%orig();
@@ -239,7 +244,7 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 %hook IGDirectedPostViewController
 
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
-	if ([title isEqualToString:@"Save"]) {
+	if ([title isEqualToString:localizedStringForKey(localizableSaveKey)]) {
 		IGPost *post = self.post;
 		SGLOG(@"Detected dismissal of action sheet with Save option, trying to save %@...", post);
 
@@ -285,7 +290,7 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 %hook IGFeedItemActionCell
 
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
-	if ([title isEqualToString:@"Save"]) {
+	if ([title isEqualToString:localizedStringForKey(localizableSaveKey)]) {
 		IGFeedItem *post = self.feedItem;
 		SGLOG(@"Detected dismissal of action sheet with Save option, trying to save %@...", post);
 
