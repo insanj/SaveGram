@@ -2,37 +2,56 @@
 
 #define SGLOG(fmt, ...) NSLog((@"[SaveGram] %s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 
-static NSString *localizableSaveKey = @"Save", *localizableReportKey = @"Report Inappropriate", *localizableDeleteKey = @"Delete";
-static inline NSString *localizedStringForKey(NSString *key) {
-	return [[NSBundle mainBundle] localizedStringForKey:key value:key table:@"Localizable"];
+/*
+ ___      _______  _______  _______  ___      _______ 
+|   |    |       ||       ||   _   ||   |    |       |
+|   |    |   _   ||       ||  |_|  ||   |    |    ___|
+|   |    |  | |  ||       ||       ||   |    |   |___ 
+|   |___ |  |_|  ||      _||       ||   |___ |    ___|
+|       ||       ||     |_ |   _   ||       ||   |___ 
+|_______||_______||_______||__| |__||_______||_______|
+*/
+static NSString *kSaveGramForeignReportKey = @"3edc99f3", *kSaveGramForeignDeleteKey = @"d5c08750", *kSaveGramForeignSaveKey = @"bb441b0b";
+
+static NSString * savegram_reportString() {
+	if ([%c(IGLocaleHelper) localeIsEnglish]) {
+		return @"Report Inappropriate";
+	}
+
+	else {
+		return [[NSBundle mainBundle] localizedStringForKey:kSaveGramForeignReportKey value:@"Report Inappropriate" table:@"Localizable"];
+	}
 }
 
-/* 
-lllllll                                                                                                      
-l:::::l                                                                                                      
-l:::::l                                                                                                      
-l:::::l                                                                                                      
- l::::l     eeeeeeeeeeee       ggggggggg   ggggg aaaaaaaaaaaaa      ccccccccccccccccyyyyyyy           yyyyyyy
- l::::l   ee::::::::::::ee    g:::::::::ggg::::g a::::::::::::a   cc:::::::::::::::c y:::::y         y:::::y 
- l::::l  e::::::eeeee:::::ee g:::::::::::::::::g aaaaaaaaa:::::a c:::::::::::::::::c  y:::::y       y:::::y  
- l::::l e::::::e     e:::::eg::::::ggggg::::::gg          a::::ac:::::::cccccc:::::c   y:::::y     y:::::y   
- l::::l e:::::::eeeee::::::eg:::::g     g:::::g    aaaaaaa:::::ac::::::c     ccccccc    y:::::y   y:::::y    
- l::::l e:::::::::::::::::e g:::::g     g:::::g  aa::::::::::::ac:::::c                  y:::::y y:::::y     
- l::::l e::::::eeeeeeeeeee  g:::::g     g:::::g a::::aaaa::::::ac:::::c                   y:::::y:::::y      
- l::::l e:::::::e           g::::::g    g:::::ga::::a    a:::::ac::::::c     ccccccc       y:::::::::y       
-l::::::le::::::::e          g:::::::ggggg:::::ga::::a    a:::::ac:::::::cccccc:::::c        y:::::::y        
-l::::::l e::::::::eeeeeeee   g::::::::::::::::ga:::::aaaa::::::a c:::::::::::::::::c         y:::::y         
-l::::::l  ee:::::::::::::e    gg::::::::::::::g a::::::::::aa:::a cc:::::::::::::::c        y:::::y          
-llllllll    eeeeeeeeeeeeee      gggggggg::::::g  aaaaaaaaaa  aaaa   cccccccccccccccc       y:::::y           
-                                        g:::::g                                           y:::::y            
-                            gggggg      g:::::g                                          y:::::y             
-                            g:::::gg   gg:::::g                                         y:::::y              
-                             g::::::ggg:::::::g                                        y:::::y               
-                              gg:::::::::::::g                                        yyyyyyy                
-                                ggg::::::ggg                                                                 
-                                   gggggg                                                                                             
-*/
+static NSString * savegram_deleteString() {
+	if ([%c(IGLocaleHelper) localeIsEnglish]) {
+		return @"Delete";
+	}
 
+	else {
+		return [[NSBundle mainBundle] localizedStringForKey:kSaveGramForeignDeleteKey value:@"Delete" table:@"Localizable"];
+	}
+}
+
+static NSString * savegram_saveString() {
+	if ([%c(IGLocaleHelper) localeIsEnglish]) {
+		return @"Save";
+	}
+
+	else {
+		return [[NSBundle mainBundle] localizedStringForKey:kSaveGramForeignSaveKey value:@"Save" table:@"Localizable"];
+	}
+}
+
+/*
+ ___      _______  _______  _______  _______  __   __ 
+|   |    |       ||       ||   _   ||       ||  | |  |
+|   |    |    ___||    ___||  |_|  ||       ||  |_|  |
+|   |    |   |___ |   | __ |       ||       ||       |
+|   |___ |    ___||   ||  ||       ||      _||_     _|
+|       ||   |___ |   |_| ||   _   ||     |_   |   |  
+|_______||_______||_______||__| |__||_______|  |___|                                                                                             
+*/
 %group FirstSupportPhase
 
 %hook IGActionSheet
@@ -207,24 +226,14 @@ llllllll    eeeeeeeeeeeeee      gggggggg::::::g  aaaaaaaaaa  aaaa   cccccccccccc
 %end // %group SecondSupportPhase
 
 /*                                                                                                                                                                                                                                                                    
-                                                                                                                            tttt          
-                                                                                                                         ttt:::t          
-                                                                                                                         t:::::t          
-                                                                                                                         t:::::t          
-    ccccccccccccccccuuuuuu    uuuuuu rrrrr   rrrrrrrrr   rrrrr   rrrrrrrrr       eeeeeeeeeeee    nnnn  nnnnnnnn    ttttttt:::::ttttttt    
-  cc:::::::::::::::cu::::u    u::::u r::::rrr:::::::::r  r::::rrr:::::::::r    ee::::::::::::ee  n:::nn::::::::nn  t:::::::::::::::::t    
- c:::::::::::::::::cu::::u    u::::u r:::::::::::::::::r r:::::::::::::::::r  e::::::eeeee:::::een::::::::::::::nn t:::::::::::::::::t    
-c:::::::cccccc:::::cu::::u    u::::u rr::::::rrrrr::::::rrr::::::rrrrr::::::re::::::e     e:::::enn:::::::::::::::ntttttt:::::::tttttt    
-c::::::c     cccccccu::::u    u::::u  r:::::r     r:::::r r:::::r     r:::::re:::::::eeeee::::::e  n:::::nnnn:::::n      t:::::t          
-c:::::c             u::::u    u::::u  r:::::r     rrrrrrr r:::::r     rrrrrrre:::::::::::::::::e   n::::n    n::::n      t:::::t          
-c:::::c             u::::u    u::::u  r:::::r             r:::::r            e::::::eeeeeeeeeee    n::::n    n::::n      t:::::t          
-c::::::c     cccccccu:::::uuuu:::::u  r:::::r             r:::::r            e:::::::e             n::::n    n::::n      t:::::t    tttttt
-c:::::::cccccc:::::cu:::::::::::::::uur:::::r             r:::::r            e::::::::e            n::::n    n::::n      t::::::tttt:::::t
- c:::::::::::::::::c u:::::::::::::::ur:::::r             r:::::r             e::::::::eeeeeeee    n::::n    n::::n      tt::::::::::::::t
-  cc:::::::::::::::c  uu::::::::uu:::ur:::::r             r:::::r              ee:::::::::::::e    n::::n    n::::n        tt:::::::::::tt
-    cccccccccccccccc    uuuuuuuu  uuuurrrrrrr             rrrrrrr                eeeeeeeeeeeeee    nnnnnn    nnnnnn          ttttttttttt  
- */
-
+ _______  __   __  ______    ______    _______  __    _  _______ 
+|       ||  | |  ||    _ |  |    _ |  |       ||  |  | ||       |
+|       ||  | |  ||   | ||  |   | ||  |    ___||   |_| ||_     _|
+|       ||  |_|  ||   |_||_ |   |_||_ |   |___ |       |  |   |  
+|      _||       ||    __  ||    __  ||    ___||  _    |  |   |  
+|     |_ |       ||   |  | ||   |  | ||   |___ | | |   |  |   |  
+|_______||_______||___|  |_||___|  |_||_______||_|  |__|  |___|  
+*/
 %group ThirdSupportPhase
 
 static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
@@ -232,8 +241,8 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 %hook IGActionSheet
 
  - (void)show {
- 	if ([[[self.buttons firstObject] currentTitle] isEqualToString:localizedStringForKey(localizableReportKey)] || [[[self.buttons firstObject] currentTitle] isEqualToString:localizableDeleteKey]) {
-		[self addButtonWithTitle:localizedStringForKey(localizableSaveKey) style:0];
+ 	if ([[[self.buttons firstObject] currentTitle] isEqualToString:savegram_reportString()] || [[[self.buttons firstObject] currentTitle] isEqualToString:savegram_deleteString()]) {
+		[self addButtonWithTitle:savegram_saveString() style:0];
 	}
 
 	%orig();
@@ -241,10 +250,19 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 
 %end
 
+/*
+ ______   ___   ______    _______  _______  _______ 
+|      | |   | |    _ |  |       ||       ||       |
+|  _    ||   | |   | ||  |    ___||       ||_     _|
+| | |   ||   | |   |_||_ |   |___ |       |  |   |  
+| |_|   ||   | |    __  ||    ___||      _|  |   |  
+|       ||   | |   |  | ||   |___ |     |_   |   |  
+|______| |___| |___|  |_||_______||_______|  |___|  
+*/
 %hook IGDirectedPostViewController
 
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
-	if ([title isEqualToString:localizedStringForKey(localizableSaveKey)]) {
+	if ([title isEqualToString:savegram_saveString()]) {
 		IGPost *post = self.post;
 		SGLOG(@"Detected dismissal of action sheet with Save option, trying to save %@...", post);
 
@@ -289,8 +307,22 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 
 %hook IGFeedItemActionCell
 
+/*- (void)onMoreButtonPressed:(id)sender {
+	[self addButtonWithTitle:savegram_saveString() style:0];
+	%orig(sender);
+}*/
+
+/*
+ _______  _______  _______  ______  
+|       ||       ||       ||      | 
+|    ___||    ___||    ___||  _    |
+|   |___ |   |___ |   |___ | | |   |
+|    ___||    ___||    ___|| |_|   |
+|   |    |   |___ |   |___ |       |
+|___|    |_______||_______||______| 
+*/
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
-	if ([title isEqualToString:localizedStringForKey(localizableSaveKey)]) {
+	if ([title isEqualToString:savegram_saveString()]) {
 		IGFeedItem *post = self.feedItem;
 		SGLOG(@"Detected dismissal of action sheet with Save option, trying to save %@...", post);
 
@@ -337,25 +369,14 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 %end // %group ThirdSupportPhase
 
 /*                                                                                                     
-                                                                                                         dddddddd
-                hhhhhhh                                                                                  d::::::d
-                h:::::h                                                                                  d::::::d
-                h:::::h                                                                                  d::::::d
-                h:::::h                                                                                  d:::::d 
-    ssssssssss   h::::h hhhhh         aaaaaaaaaaaaa  rrrrr   rrrrrrrrr       eeeeeeeeeeee        ddddddddd:::::d 
-  ss::::::::::s  h::::hh:::::hhh      a::::::::::::a r::::rrr:::::::::r    ee::::::::::::ee    dd::::::::::::::d 
-ss:::::::::::::s h::::::::::::::hh    aaaaaaaaa:::::ar:::::::::::::::::r  e::::::eeeee:::::ee d::::::::::::::::d 
-s::::::ssss:::::sh:::::::hhh::::::h            a::::arr::::::rrrrr::::::re::::::e     e:::::ed:::::::ddddd:::::d 
- s:::::s  ssssss h::::::h   h::::::h    aaaaaaa:::::a r:::::r     r:::::re:::::::eeeee::::::ed::::::d    d:::::d 
-   s::::::s      h:::::h     h:::::h  aa::::::::::::a r:::::r     rrrrrrre:::::::::::::::::e d:::::d     d:::::d 
-      s::::::s   h:::::h     h:::::h a::::aaaa::::::a r:::::r            e::::::eeeeeeeeeee  d:::::d     d:::::d 
-ssssss   s:::::s h:::::h     h:::::ha::::a    a:::::a r:::::r            e:::::::e           d:::::d     d:::::d 
-s:::::ssss::::::sh:::::h     h:::::ha::::a    a:::::a r:::::r            e::::::::e          d::::::ddddd::::::dd
-s::::::::::::::s h:::::h     h:::::ha:::::aaaa::::::a r:::::r             e::::::::eeeeeeee   d:::::::::::::::::d
- s:::::::::::ss  h:::::h     h:::::h a::::::::::aa:::ar:::::r              ee:::::::::::::e    d:::::::::ddd::::d
-  sssssssssss    hhhhhhh     hhhhhhh  aaaaaaaaaa  aaaarrrrrrr                eeeeeeeeeeeeee     ddddddddd   ddddd
-*/     
-
+ _______  _______  _______  ______   
+|       ||       ||       ||    _ |  
+|       ||_     _||   _   ||   | ||  
+|       |  |   |  |  | |  ||   |_||_ 
+|      _|  |   |  |  |_|  ||    __  |
+|     |_   |   |  |       ||   |  | |
+|_______|  |___|  |_______||___|  |_|
+*/
 %ctor {
 	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
 	NSComparisonResult supportedVersionComparisonResult = [version compare:@"6.1.2" options:NSNumericSearch];

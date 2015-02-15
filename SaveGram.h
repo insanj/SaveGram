@@ -32,7 +32,7 @@
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title;
 @end
 
-@interface IGFeedItemActionCell <IGActionSheetDelegate>
+@interface IGFeedItemActionCell : UICollectionViewCell <IGActionSheetDelegate>
 
 @property (nonatomic,retain) IGFeedItem *feedItem;
 
@@ -45,7 +45,7 @@
 @property (nonatomic, retain) UIView *overlayView;
 @property (nonatomic, retain) UIView *buttonView;
 @property (nonatomic, retain) NSMutableArray *buttons;
-@property (assign, nonatomic, weak) id actionDelegate;
+@property (nonatomic, retain) NSObject<IGActionSheetDelegate>* actionDelegate;
 
 // iOS 8
 + (void)showWithDelegate:(id)arg1;
@@ -62,8 +62,10 @@
 - (void)showWithTitle:(NSString *)title;
 - (void)buttonTapped:(UIButton *)button;
 - (void)dismissAnimated:(BOOL)animated;
-- (void)setActionDelegate:(id)delegate;
 - (void)setButtons:(NSMutableArray *)arg1;
+- (void)layoutHeaderAndButtons;
+- (void)animateVisible:(BOOL)visible;
+
 @end
 
 @interface IGAssetWriter : NSObject {
@@ -87,5 +89,18 @@
 @interface IGDirectedPostViewController : UIViewController
 
 @property (nonatomic, retain) IGPost *post;
+
+@end
+
+@interface IGLocaleHelper : NSObject
+
++ (BOOL)localeIsEnglish;
++ (BOOL)localeIsRussian;
++ (BOOL)keyboardLocaleIsFarEast;
++ (id)localeForCurrentLanguage;
++ (BOOL)isLocale:(id)arg1 inLocaleArray:(id)arg2;
++ (id)localeForCurrentKeyboard;
++ (BOOL)localeHasSpecialCharacters;
++ (BOOL)localeIsThai;
 
 @end
