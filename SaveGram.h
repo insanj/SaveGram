@@ -3,23 +3,46 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import "substrate.h"
 
+#define SGLOG(fmt, ...) NSLog((@"[SaveGram] %s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+
+@interface IGPhoto : NSObject
+
+@property (strong, nonatomic) NSArray *imageVersions;
+
+- (id)imageURLForSize:(CGSize)size;
+
+@end
+
+@interface IGVideo : NSObject
+
+@property (strong, nonatomic) NSArray *videoVersions;
+
+- (id)videoURLForVideoVersion:(int)version;
+
+@end
+
 @interface IGPost : NSObject
 
 // iOS 7
-@property (nonatomic, readwrite) int mediaType; 		// 1 = picture, 2 = video
-+ (int)videoVersionForCurrentNetworkConditions;  // Introducted in 5.0.9
+@property (nonatomic, readwrite) int mediaType; // 1 = picture, 2 = video
++ (int)videoVersionForCurrentNetworkConditions; // Introducted in 5.0.9
 + (int)fullSizeVideoVersionForDevice;			// Removed in 5.0.9
 + (int)fullSizeImageVersionForDevice;
 
 // 6.1.2
 - (id)imageURLForFullSizeImage;
 
-// 6.5.0+
+// 6.5.x
 - (id)imageURLForImageIndex:(NSInteger)index;
 - (id)imageURLForSize:(CGSize)size;
 
 - (NSURL *)imageURLForImageVersion:(int)version;
 - (NSURL *)videoURLForVideoVersion:(int)version;
+
+// 6.6.x
+@property (strong, nonatomic) IGPhoto *photo;
+@property (strong, nonatomic) IGVideo *video;
+
 @end
 
 @interface IGFeedItem : IGPost

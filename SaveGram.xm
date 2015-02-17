@@ -12,6 +12,7 @@
 |_______||_______||_______||__| |__||_______||_______|
 */
 static NSString *kSaveGramForeignReportKey = @"3edc99f3", *kSaveGramForeignDeleteKey = @"d5c08750", *kSaveGramForeignSaveKey = @"bb441b0b";
+static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 
 static NSString * savegram_reportString() {
 	if ([%c(IGLocaleHelper) localeIsEnglish]) {
@@ -225,18 +226,7 @@ static NSString * savegram_saveString() {
 
 %end // %group SecondSupportPhase
 
-/*                                                                                                                                                                                                                                                                    
- _______  __   __  ______    ______    _______  __    _  _______ 
-|       ||  | |  ||    _ |  |    _ |  |       ||  |  | ||       |
-|       ||  | |  ||   | ||  |   | ||  |    ___||   |_| ||_     _|
-|       ||  |_|  ||   |_||_ |   |_||_ |   |___ |       |  |   |  
-|      _||       ||    __  ||    __  ||    ___||  _    |  |   |  
-|     |_ |       ||   |  | ||   |  | ||   |___ | | |   |  |   |  
-|_______||_______||___|  |_||___|  |_||_______||_|  |__|  |___|  
-*/
 %group ThirdSupportPhase
-
-static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 
 %hook IGActionSheet
 
@@ -250,15 +240,6 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 
 %end
 
-/*
- ______   ___   ______    _______  _______  _______ 
-|      | |   | |    _ |  |       ||       ||       |
-|  _    ||   | |   | ||  |    ___||       ||_     _|
-| | |   ||   | |   |_||_ |   |___ |       |  |   |  
-| |_|   ||   | |    __  ||    ___||      _|  |   |  
-|       ||   | |   |  | ||   |___ |     |_   |   |  
-|______| |___| |___|  |_||_______||_______|  |___|  
-*/
 %hook IGDirectedPostViewController
 
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
@@ -307,20 +288,6 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 
 %hook IGFeedItemActionCell
 
-/*- (void)onMoreButtonPressed:(id)sender {
-	[self addButtonWithTitle:savegram_saveString() style:0];
-	%orig(sender);
-}*/
-
-/*
- _______  _______  _______  ______  
-|       ||       ||       ||      | 
-|    ___||    ___||    ___||  _    |
-|   |___ |   |___ |   |___ | | |   |
-|    ___||    ___||    ___|| |_|   |
-|   |    |   |___ |   |___ |       |
-|___|    |_______||_______||______| 
-*/
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
 	if ([title isEqualToString:savegram_saveString()]) {
 		IGFeedItem *post = self.feedItem;
@@ -368,6 +335,107 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 
 %end // %group ThirdSupportPhase
 
+/*                                                                                                                                  
+ _______  __   __  ______    ______    _______  __    _  _______ 
+|       ||  | |  ||    _ |  |    _ |  |       ||  |  | ||       |
+|       ||  | |  ||   | ||  |   | ||  |    ___||   |_| ||_     _|
+|       ||  |_|  ||   |_||_ |   |_||_ |   |___ |       |  |   |  
+|      _||       ||    __  ||    __  ||    ___||  _    |  |   |  
+|     |_ |       ||   |  | ||   |  | ||   |___ | | |   |  |   |  
+|_______||_______||___|  |_||___|  |_||_______||_|  |__|  |___|  
+*/
+
+%group CurrentSupportPhase
+
+%hook IGActionSheet
+
+ - (void)show {
+ 	if ([[[self.buttons firstObject] currentTitle] isEqualToString:savegram_reportString()] || [[[self.buttons firstObject] currentTitle] isEqualToString:savegram_deleteString()]) {
+		[self addButtonWithTitle:savegram_saveString() style:0];
+	}
+
+	%orig();
+}
+
+%end
+
+static inline void savegram_saveMediaFromPost(IGPost *post) {
+	if (post.mediaType == 1) {
+		NSDictionary *imageVersion = [post.photo.imageVersions firstObject];
+		NSURL *firstImageVersionURL = [NSURL URLWithString:imageVersion[@"url"]];
+
+		UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:firstImageVersionURL]];
+		IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
+		[postImageAssetWriter writeToInstagramAlbum];
+	}
+
+	else {
+		NSDictionary *videoVersion = [post.video.videoVersions firstObject];
+		NSURL *firstVideoVersionURL = [NSURL URLWithString:videoVersion[@"url"]];
+
+		NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:firstVideoVersionURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+			NSFileManager *fileManager = [NSFileManager defaultManager];
+		    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
+		    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[firstVideoVersionURL lastPathComponent]];
+		    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
+
+		    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completionBlock:nil];
+		}];
+
+		[videoDownloadTask resume];
+	}
+}
+
+/*
+ ______   ___   ______    _______  _______  _______ 
+|      | |   | |    _ |  |       ||       ||       |
+|  _    ||   | |   | ||  |    ___||       ||_     _|
+| | |   ||   | |   |_||_ |   |___ |       |  |   |  
+| |_|   ||   | |    __  ||    ___||      _|  |   |  
+|       ||   | |   |  | ||   |___ |     |_   |   |  
+|______| |___| |___|  |_||_______||_______|  |___|  
+*/
+%hook IGDirectedPostViewController
+
+- (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
+	if ([title isEqualToString:savegram_saveString()]) {
+		IGPost *post = self.post;
+		savegram_saveMediaFromPost(post);
+	}
+
+	else {
+		%orig(title);
+	}
+}
+
+%end
+
+%hook IGFeedItemActionCell
+
+/*
+ _______  _______  _______  ______  
+|       ||       ||       ||      | 
+|    ___||    ___||    ___||  _    |
+|   |___ |   |___ |   |___ | | |   |
+|    ___||    ___||    ___|| |_|   |
+|   |    |   |___ |   |___ |       |
+|___|    |_______||_______||______| 
+*/
+- (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
+	if ([title isEqualToString:savegram_saveString()]) {
+		IGFeedItem *post = self.feedItem;
+		savegram_saveMediaFromPost(post);
+	}
+
+	else {
+		%orig(title);
+	}
+}
+
+%end
+
+%end // %group CurrentSupportPhase
+
 /*                                                                                                     
  _______  _______  _______  ______   
 |       ||       ||       ||    _ |  
@@ -379,20 +447,28 @@ static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
 */
 %ctor {
 	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-	NSComparisonResult supportedVersionComparisonResult = [version compare:@"6.1.2" options:NSNumericSearch];
+	NSComparisonResult newestWaveVersionComparisonResult = [version compare:@"6.6.0" options:NSNumericSearch];
 
-	if (supportedVersionComparisonResult == NSOrderedDescending) {
-		SGLOG(@"Detected Instagram running on newest supported version %@.", version);
-		%init(ThirdSupportPhase);
-	}
+	if (newestWaveVersionComparisonResult == NSOrderedDescending) {
+		NSComparisonResult supportedVersionComparisonResult = [version compare:@"6.1.2" options:NSNumericSearch];
 
-	else if (supportedVersionComparisonResult == NSOrderedSame) {
-		SGLOG(@"Detected Instagram running on supported version %@.", version);
-		%init(SecondSupportPhase);
+		if (supportedVersionComparisonResult == NSOrderedDescending) {
+			SGLOG(@"Detected Instagram running on supported version %@.", version);
+			%init(ThirdSupportPhase);
+		}
+
+		else if (supportedVersionComparisonResult == NSOrderedSame) {
+			SGLOG(@"Detected Instagram running on supported version %@.", version);
+			%init(SecondSupportPhase);
+		}
+
+		else {
+			SGLOG(@"Detected Instagram running on supported old version %@.", version);
+			%init(FirstSupportPhase);
+		}
 	}
 
 	else {
-		SGLOG(@"Detected Instagram running on supported old version %@.", version);
-		%init(FirstSupportPhase);
+		%init(CurrentSupportPhase);
 	}
 }
