@@ -127,3 +127,19 @@
 + (BOOL)localeIsThai;
 
 @end
+
+typedef NS_ENUM(NSInteger, AFNetworkReachabilityStatus) {
+    AFNetworkReachabilityStatusUnknown          = -1,
+    AFNetworkReachabilityStatusNotReachable     = 0,
+    AFNetworkReachabilityStatusReachableViaWWAN = 1,
+    AFNetworkReachabilityStatusReachableViaWiFi = 2,
+};
+@interface AFNetworkReachabilityManager : NSObject
+
+// @property (readonly, nonatomic, assign, getter = isReachable) BOOL reachable;
+
+@property (nonatomic, readonly) AFNetworkReachabilityStatus networkReachabilityStatus; 
+
++ (AFNetworkReachabilityManager *)sharedManager;
+
+@end

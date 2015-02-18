@@ -351,6 +351,7 @@ static NSString * savegram_saveString() {
 
  - (void)show {
  	if ([[[self.buttons firstObject] currentTitle] isEqualToString:savegram_reportString()] || [[[self.buttons firstObject] currentTitle] isEqualToString:savegram_deleteString()]) {
+ 		SGLOG(@"adding Save button to action sheet %@", self);
 		[self addButtonWithTitle:savegram_saveString() style:0];
 	}
 
@@ -359,27 +360,50 @@ static NSString * savegram_saveString() {
 
 %end
 
-static inline void savegram_saveMediaFromPost(IGPost *post) {
-	if (post.mediaType == 1) {
-		NSDictionary *imageVersion = [post.photo.imageVersions firstObject];
-		NSURL *firstImageVersionURL = [NSURL URLWithString:imageVersion[@"url"]];
+static NSURL * savegram_highestResolutionURLFromVersionArray(NSArray *versions) {
+	NSURL *highestResAvailableVersion;
+	CGFloat highResAvailableArea;
+	for (NSDictionary *versionDict in versions) {
+		CGFloat height = [versionDict[@"height"] floatValue];
+		CGFloat width = [versionDict[@"width"] floatValue];
+		CGFloat res = height * width;
 
-		UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:firstImageVersionURL]];
+		if (res > highResAvailableArea) {
+			highResAvailableArea = res;
+			highestResAvailableVersion = [NSURL URLWithString:versionDict[@"url"]];
+		}
+	}
+
+	SGLOG(@"%@ has highest resolution available in %@", highestResAvailableVersion, versions);
+	return highestResAvailableVersion;
+}
+
+static void inline savegram_saveMediaFromPost(IGPost *post) {
+	if ([%c(AFNetworkReachabilityManager) sharedManager].networkReachabilityStatus == AFNetworkReachabilityStatusNotReachable) {
+ 		SGLOG(@"networking not reachable");
+		UIAlertView *noInternetAlert = [[UIAlertView alloc] initWithTitle:@"SaveGram" message:@"Check your internet connection and try again, Instagram may also be having issues." delegate:nil cancelButtonTitle:@"Dismiss" otherButtonTitles:nil];
+		[noInternetAlert show];
+		[noInternetAlert release];
+	}
+
+	else if (post.mediaType == 1) {
+		NSURL *imageURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.photo.imageVersions);
+		UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
 		IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
 		[postImageAssetWriter writeToInstagramAlbum];
+ 		SGLOG(@"wrote image %@ to Instagram album", postImage);
 	}
 
 	else {
-		NSDictionary *videoVersion = [post.video.videoVersions firstObject];
-		NSURL *firstVideoVersionURL = [NSURL URLWithString:videoVersion[@"url"]];
-
-		NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:firstVideoVersionURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+		NSURL *videoURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.video.videoVersions);
+		NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
 			NSFileManager *fileManager = [NSFileManager defaultManager];
 		    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
-		    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[firstVideoVersionURL lastPathComponent]];
+		    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
 		    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
 
 		    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completionBlock:nil];
+	 		SGLOG(@"wrote video %@ to Instagram album", videoSavedURL);
 		}];
 
 		[videoDownloadTask resume];
@@ -399,6 +423,7 @@ static inline void savegram_saveMediaFromPost(IGPost *post) {
 
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
 	if ([title isEqualToString:savegram_saveString()]) {
+ 		SGLOG(@"saving media from Direct message");
 		IGPost *post = self.post;
 		savegram_saveMediaFromPost(post);
 	}
@@ -423,6 +448,7 @@ static inline void savegram_saveMediaFromPost(IGPost *post) {
 */
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
 	if ([title isEqualToString:savegram_saveString()]) {
+ 		SGLOG(@"saving media from Feed post");
 		IGFeedItem *post = self.feedItem;
 		savegram_saveMediaFromPost(post);
 	}
@@ -469,6 +495,7 @@ static inline void savegram_saveMediaFromPost(IGPost *post) {
 	}
 
 	else {
+		SGLOG(@"Detected Instagram running on currentl supported old version %@.", version);
 		%init(CurrentSupportPhase);
 	}
 }
