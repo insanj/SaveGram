@@ -474,28 +474,29 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 %ctor {
 	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
 	NSComparisonResult newestWaveVersionComparisonResult = [version compare:@"6.6.0" options:NSNumericSearch];
+	SGLOG(@"Instagram %@, comparison result to last official supported build (6.6.0): %i", version, (int)newestWaveVersionComparisonResult);
 
-	if (newestWaveVersionComparisonResult == NSOrderedDescending) {
+	if (newestWaveVersionComparisonResult != NSOrderedDescending) {
 		NSComparisonResult supportedVersionComparisonResult = [version compare:@"6.1.2" options:NSNumericSearch];
 
 		if (supportedVersionComparisonResult == NSOrderedDescending) {
-			SGLOG(@"Detected Instagram running on supported version %@.", version);
+			SGLOG(@"detected Instagram running on third support wave version %@.", version);
 			%init(ThirdSupportPhase);
 		}
 
 		else if (supportedVersionComparisonResult == NSOrderedSame) {
-			SGLOG(@"Detected Instagram running on supported version %@.", version);
+			SGLOG(@"detected Instagram running on second support wave version %@.", version);
 			%init(SecondSupportPhase);
 		}
 
 		else {
-			SGLOG(@"Detected Instagram running on supported old version %@.", version);
+			SGLOG(@"Detected Instagram running on first support wave version %@.", version);
 			%init(FirstSupportPhase);
 		}
 	}
 
 	else {
-		SGLOG(@"Detected Instagram running on currentl supported old version %@.", version);
+		SGLOG(@"Detected Instagram running on current supported version %@.", version);
 		%init(CurrentSupportPhase);
 	}
 }
