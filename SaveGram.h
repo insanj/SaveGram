@@ -10,6 +10,7 @@
 @property (strong, nonatomic) NSArray *imageVersions;
 
 - (id)imageURLForSize:(CGSize)size;
+- (id)imageVersions;
 
 @end
 
@@ -18,6 +19,7 @@
 @property (strong, nonatomic) NSArray *videoVersions;
 
 - (id)videoURLForVideoVersion:(int)version;
+- (id)videoVersions;
 
 @end
 
