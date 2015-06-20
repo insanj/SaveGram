@@ -387,7 +387,8 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 	}
 
 	else if (post.mediaType == 1) {
-		NSURL *imageURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.photo.imageVersions);
+		NSArray* versions = (!post.photo) ? [[post photo]imageVersions]: ((NSArray *)post.photo.imageVersions) ? (NSArray *)post.photo.imageVersions : [post.photo imageVersions];
+		NSURL *imageURL = savegram_highestResolutionURLFromVersionArray(versions);
 		UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
 		IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
 		[postImageAssetWriter writeToInstagramAlbum];
@@ -395,7 +396,8 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 	}
 
 	else {
-		NSURL *videoURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.video.videoVersions);
+		NSArray* versions = (!post.video) ? [[post video]videoVersions]: ((NSArray *)post.video.videoVersions) ? (NSArray *)post.video.videoVersions : [post.video videoVersions];
+		NSURL *videoURL = savegram_highestResolutionURLFromVersionArray(versions);
 		NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
 			NSFileManager *fileManager = [NSFileManager defaultManager];
 		    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
