@@ -12,11 +12,17 @@
 |_______||_______||_______||__| |__||_______||_______|
 */
 static NSString *kSaveGramForeignReportKey = @"3edc99f3", *kSaveGramForeignDeleteKey = @"d5c08750", *kSaveGramForeignSaveKey = @"bb441b0b";
+static NSString *kSaveGramNewForeignReportKey = @"J8uO9";
 static ALAssetsLibrary *kSaveGramAssetsLibrary = [[ALAssetsLibrary alloc] init];
+static ALIsNewLocaleFormat = NO;
 
 static NSString * savegram_reportString() {
 	if ([%c(IGLocaleHelper) localeIsEnglish]) {
 		return @"Report Inappropriate";
+	}
+
+	else if (ALIsNewLocaleFormat) {
+		return [[NSBundle mainBundle] localizedStringForKey:kSaveGramNewForeignReportKey value:@"Report Inappropriate" table:@"Localizable"];
 	}
 
 	else {
@@ -29,6 +35,10 @@ static NSString * savegram_deleteString() {
 		return @"Delete";
 	}
 
+	else if (ALIsNewLocaleFormat) {
+		return [[NSBundle mainBundle] localizedStringForKey:kSaveGramNewForeignDeleteKey value:@"Delete" table:@"Localizable"];
+	}
+
 	else {
 		return [[NSBundle mainBundle] localizedStringForKey:kSaveGramForeignDeleteKey value:@"Delete" table:@"Localizable"];
 	}
@@ -37,6 +47,10 @@ static NSString * savegram_deleteString() {
 static NSString * savegram_saveString() {
 	if ([%c(IGLocaleHelper) localeIsEnglish]) {
 		return @"Save";
+	}
+
+	else if (ALIsNewLocaleFormat) {
+		return [[NSBundle mainBundle] localizedStringForKey:kSaveGramNewForeignSaveKey value:@"Save" table:@"Localizable"];
 	}
 
 	else {
@@ -474,7 +488,7 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 %ctor {
 	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
 	NSComparisonResult newestWaveVersionComparisonResult = [version compare:@"6.6.0" options:NSNumericSearch];
-	SGLOG(@"Instagram %@, comparison result to last official supported build (6.6.0): %i", version, (int)newestWaveVersionComparisonResult);
+	SGLOG(@"Instagram %@, comparison result to last official supported build (6.13.0): %i", version, (int)newestWaveVersionComparisonResult);
 
 	if (newestWaveVersionComparisonResult != NSOrderedDescending) {
 		NSComparisonResult supportedVersionComparisonResult = [version compare:@"6.1.2" options:NSNumericSearch];
@@ -493,10 +507,14 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 			SGLOG(@"Detected Instagram running on first support wave version %@.", version);
 			%init(FirstSupportPhase);
 		}
+
+		return;
 	}
 
-	else {
-		SGLOG(@"Detected Instagram running on current supported version %@.", version);
-		%init(CurrentSupportPhase);
+	else if (newestWaveVersionComparisonResult == NSOrderedAscending) {
+		ALIsNewLocaleFormat = YES;
 	}
+
+	SGLOG(@"Detected Instagram running on current supported version %@.", version);
+	%init(CurrentSupportPhase);
 }
