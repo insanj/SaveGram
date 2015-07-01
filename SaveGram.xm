@@ -18,7 +18,16 @@ static NSString *kSaveGramSaveString = @"Save";
 %hook IGActionSheet
 
  - (void)show {
- 	if (YES) {
+ 	AppDelegate *instagramAppDelegate = [UIApplication sharedApplication].delegate;
+ 	IGRootViewController *rootViewController = (IGRootViewController *)((IGShakeWindow *)instagramAppDelegate.window).rootViewController;
+ 	UIViewController *topMostViewController = rootViewController.topMostViewController;
+
+ 	// good classes = IGMainFeedViewController, IGSingleFeedViewController, IGDirectedPostViewController
+ 	// (some IGViewController, some IGFeedViewController)
+ 	BOOL isNotInWebViewController = ![topMostViewController isKindOfClass:[%c(IGWebViewController) class]];
+ 	BOOL isNotInProfileViewController = ![topMostViewController isKindOfClass:[%c(IGUserDetailViewController) class]];
+
+ 	if (isNotInWebViewController && isNotInProfileViewController) {
  		SGLOG(@"adding Save button to action sheet %@", self);
 		[self addButtonWithTitle:kSaveGramSaveString style:0];
 	}
