@@ -1,8 +1,9 @@
 #import "SaveGram.h"
 
 #define SGLOG(fmt, ...) NSLog((@"[SaveGram] %s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+static NSString *kSaveGramSaveString = @"Save";
 
-/*                                                                                                                                  
+/*
  _______  __   __  ______    ______    _______  __    _  _______ 
 |       ||  | |  ||    _ |  |    _ |  |       ||  |  | ||       |
 |       ||  | |  ||   | ||  |   | ||  |    ___||   |_| ||_     _|
@@ -17,9 +18,9 @@
 %hook IGActionSheet
 
  - (void)show {
- 	if ([[[self.buttons firstObject] currentTitle] isEqualToString:savegram_reportString()] || [[[self.buttons firstObject] currentTitle] isEqualToString:savegram_deleteString()]) {
+ 	if (YES) {
  		SGLOG(@"adding Save button to action sheet %@", self);
-		[self addButtonWithTitle:savegram_saveString() style:0];
+		[self addButtonWithTitle:kSaveGramSaveString style:0];
 	}
 
 	%orig();
@@ -89,7 +90,7 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 %hook IGDirectedPostViewController
 
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
-	if ([title isEqualToString:savegram_saveString()]) {
+	if ([title isEqualToString:kSaveGramSaveString]) {
  		SGLOG(@"saving media from Direct message");
 		IGPost *post = self.post;
 		savegram_saveMediaFromPost(post);
@@ -114,7 +115,7 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 |___|    |_______||_______||______| 
 */
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
-	if ([title isEqualToString:savegram_saveString()]) {
+	if ([title isEqualToString:kSaveGramSaveString]) {
  		SGLOG(@"saving media from Feed post");
 		IGFeedItem *post = self.feedItem;
 		savegram_saveMediaFromPost(post);
@@ -145,14 +146,13 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 
 	if (newestWaveVersionComparisonResult != NSOrderedDescending) {
 		UIAlertView *compatibilityWarningView = [[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"You are running an old version of Instagram. It's recommended that you downgrade to a legacy SaveGram package, or upgrade Instagram." delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
-		[errorView show];
-		[errorView release];
+		[compatibilityWarningView show];
+		[compatibilityWarningView release];
 	}
 
 	else {
 		SGLOG(@"Detected Instagram running on current supported version %@.", version);
-		%init(CurrentSupportPhase);
 	}
+
+	%init(CurrentSupportPhase);
 }
-
-
