@@ -13,19 +13,47 @@ static NSString *kSaveGramSaveString = @"Save";
 |_______||_______||___|  |_||___|  |_||_______||_|  |__|  |___|  
 */
 
+BOOL isNotInWebViewController = NO;
+BOOL isNotInProfileViewController = NO;
+
 %group CurrentSupportPhase
+
+// Check topMostViewController
+%hook IGWebViewController
+- (void)loadCurrentTargetURL {
+	isNotInWebViewController = YES;
+	%orig;
+}
+// to be sure that it returns NO again
+- (void)dismissWithCompletionHandler:(id)arg1 {
+	isNotInWebViewController = NO;
+	%orig;
+}
+%end
+
+%hook IGUserDetailViewController
+- (void)viewWillAppear:(BOOL)arg1 {
+	isNotInProfileViewController = YES;
+	%orig;
+}
+// to be sure that it returns NO again
+- (void)viewWillDisappear:(BOOL)arg1 {
+	isNotInProfileViewController = NO;
+	%orig;
+}
+%end
 
 %hook IGActionSheet
 
  - (void)show {
- 	AppDelegate *instagramAppDelegate = [UIApplication sharedApplication].delegate;
- 	IGRootViewController *rootViewController = (IGRootViewController *)((IGShakeWindow *)instagramAppDelegate.window).rootViewController;
- 	UIViewController *topMostViewController = rootViewController.topMostViewController;
+ 	// AppDelegate *instagramAppDelegate = [UIApplication sharedApplication].delegate;
+ 	// IGRootViewController *rootViewController = (IGRootViewController *)((IGShakeWindow *)instagramAppDelegate.window).rootViewController;
+ 	// UIViewController *topMostViewController = rootViewController.topMostViewController;
 
  	// good classes = IGMainFeedViewController, IGSingleFeedViewController, IGDirectedPostViewController
  	// (some IGViewController, some IGFeedViewController)
- 	BOOL isNotInWebViewController = ![topMostViewController isKindOfClass:[%c(IGWebViewController) class]];
- 	BOOL isNotInProfileViewController = ![topMostViewController isKindOfClass:[%c(IGUserDetailViewController) class]];
+ 	// BOOL isNotInWebViewController = ![topMostViewController isKindOfClass:[%c(IGWebViewController) class]];
+ 	// BOOL isNotInProfileViewController = ![topMostViewController isKindOfClass:[%c(IGUserDetailViewController) class]];
 
  	if (isNotInWebViewController && isNotInProfileViewController) {
  		SGLOG(@"adding Save button to action sheet %@", self);
