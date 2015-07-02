@@ -6,32 +6,6 @@
 #define SGLOG(fmt, ...) NSLog((@"[SaveGram] %s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 // iOS 8.3+
-@interface IGViewController : UIViewController
-@end
-
-@interface IGUserDetailViewController : IGViewController
-@end
-
-@interface IGWebViewController : IGViewController
-@end
-
-@interface IGRootViewController : UIViewController
-
-- (id)topMostViewController;
-
-@end
-
-@interface IGShakeWindow : UIWindow
-
-- (id)rootViewController; // IGRootViewController
-
-@end
-
-@interface AppDelegate : NSObject
-
-- (id)window; // IGShakeWindow
-
-@end
 
 @interface IGPhoto : NSObject
 
