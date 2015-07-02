@@ -36,6 +36,7 @@ BOOL isNotInProfileViewController = NO;
 	isNotInProfileViewController = YES;
 	%orig;
 }
+// to be sure that it returns NO again
 - (void)viewWillDisappear:(BOOL)arg1 {
 	isNotInProfileViewController = NO;
 	%orig;
