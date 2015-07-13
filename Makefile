@@ -7,7 +7,6 @@ include theos/makefiles/common.mk
 TWEAK_NAME = SaveGram
 SaveGram_FILES = SaveGram.xm MBProgressHUD.m
 SaveGram_FRAMEWORKS = Foundation UIKit CoreGraphics
-MBProgressHUD.m_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 

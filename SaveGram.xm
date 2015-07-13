@@ -66,8 +66,10 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 	}
 
 	UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-	MBProgressHUD *saveGramHUD = [MBProgressHUD showHUDAddedTo:keyWindow animated:YES];
+	MBProgressHUD __block *saveGramHUD = [MBProgressHUD showHUDAddedTo:keyWindow animated:YES];
+	saveGramHUD.animationType = MBProgressHUDAnimationZoom;
 	saveGramHUD.labelText = @"Saving post...";
+
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
 		if (post.mediaType == 1) { // photo
 			NSURL *imageURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.photo.imageVersions);
@@ -77,7 +79,8 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 	 		SGLOG(@"wrote image %@ to Instagram album", postImage);
 
 		    dispatch_async(dispatch_get_main_queue(), ^{
-		        [MBProgressHUD hideHUDForView:keyWindow animated:YES];
+		    	saveGramHUD.labelText = @"Saved!";
+		        [saveGramHUD hide:YES afterDelay:1.0];
 		    });
 		}
 
@@ -93,7 +96,8 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 		 		SGLOG(@"wrote video %@ to Instagram album", videoSavedURL);
 
 				dispatch_async(dispatch_get_main_queue(), ^{
-			        [MBProgressHUD hideHUDForView:keyWindow animated:YES];
+			    	saveGramHUD.labelText = @"Saved!";
+    		        [saveGramHUD hide:YES afterDelay:1.0];
 			    });
 			}];
 
