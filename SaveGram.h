@@ -29,6 +29,7 @@
 
 @interface AppDelegate : NSObject
 
+- (void)startMainAppWithMainFeedSource:(id)source animated:(BOOL)animated;
 - (id)window; // IGShakeWindow
 
 @end

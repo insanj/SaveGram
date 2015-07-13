@@ -3,16 +3,16 @@
 
 #define SGLOG(fmt, ...) NSLog((@"[SaveGram] %s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 static NSString *kSaveGramSaveString = @"Save";
-static NSString *kSaveGramAllowDefaultsKey = @"SaveGram.Allow";
+static NSString *kSaveGramAllowVersionDefaultsKey = @"SaveGram.LastAllowedVersion";
 
 /*
- _______  __   __  ______    ______    _______  __    _  _______ 
-|       ||  | |  ||    _ |  |    _ |  |       ||  |  | ||       |
-|       ||  | |  ||   | ||  |   | ||  |    ___||   |_| ||_     _|
-|       ||  |_|  ||   |_||_ |   |_||_ |   |___ |       |  |   |  
-|      _||       ||    __  ||    __  ||    ___||  _    |  |   |  
-|     |_ |       ||   |  | ||   |  | ||   |___ | | |   |  |   |  
-|_______||_______||___|  |_||___|  |_||_______||_|  |__|  |___|  
+ _______  ______   ______     _______  __   __  _______  _______  _______  __    _ 
+|   _   ||      | |      |   |  _    ||  | |  ||       ||       ||       ||  |  | |
+|  |_|  ||  _    ||  _    |  | |_|   ||  | |  ||_     _||_     _||   _   ||   |_| |
+|       || | |   || | |   |  |       ||  |_|  |  |   |    |   |  |  | |  ||       |
+|       || |_|   || |_|   |  |  _   | |       |  |   |    |   |  |  |_|  ||  _    |
+|   _   ||       ||       |  | |_|   ||       |  |   |    |   |  |       || | |   |
+|__| |__||______| |______|   |_______||_______|  |___|    |___|  |_______||_|  |__|
 */
 %group CurrentSupportPhase
 
@@ -38,6 +38,16 @@ static NSString *kSaveGramAllowDefaultsKey = @"SaveGram.Allow";
 
 %end
 
+/*
+ _______  _______  _______    _______  _______  _______  _______ 
+|       ||       ||       |  |       ||       ||       ||       |
+|    ___||    ___||_     _|  |    _  ||   _   ||  _____||_     _|
+|   | __ |   |___   |   |    |   |_| ||  | |  || |_____   |   |  
+|   ||  ||    ___|  |   |    |    ___||  |_|  ||_____  |  |   |  
+|   |_| ||   |___   |   |    |   |    |       | _____| |  |   |  
+|_______||_______|  |___|    |___|    |_______||_______|  |___|  
+&*/
+
 static NSURL * savegram_highestResolutionURLFromVersionArray(NSArray *versions) {
 	NSURL *highestResAvailableVersion;
 	CGFloat highResAvailableArea;
@@ -56,14 +66,14 @@ static NSURL * savegram_highestResolutionURLFromVersionArray(NSArray *versions) 
 	return highestResAvailableVersion;
 }
 
-static NSString *savegram_lastVersionUserConfirmedWasSupported() {
+static NSString * savegram_lastVersionUserConfirmedWasSupported() {
 	NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
-	return [standardUserDefaults objectForKey:kSaveGramAllowDefaultsKey];
+	return [standardUserDefaults objectForKey:kSaveGramAllowVersionDefaultsKey];
 } 
 
 static void savegram_setLastVersionUserConfirmedWasSupported(NSString *value) {
 	NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
-	[standardUserDefaults setObject:value forKey:kSaveGramAllowDefaultsKey];
+	[standardUserDefaults setObject:value forKey:kSaveGramAllowVersionDefaultsKey];
 }
 
 static void inline savegram_saveMediaFromPost(IGPost *post) {
@@ -168,6 +178,15 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 
 %end // %group CurrentSupportPhase
 
+/*
+ _______  _______  __   __  _______  _______  _______  ___   _______  ___   ___      ___   _______  __   __ 
+|       ||       ||  |_|  ||       ||   _   ||       ||   | |  _    ||   | |   |    |   | |       ||  | |  |
+|       ||   _   ||       ||    _  ||  |_|  ||_     _||   | | |_|   ||   | |   |    |   | |_     _||  |_|  |
+|       ||  | |  ||       ||   |_| ||       |  |   |  |   | |       ||   | |   |    |   |   |   |  |       |
+|      _||  |_|  ||       ||    ___||       |  |   |  |   | |  _   | |   | |   |___ |   |   |   |  |_     _|
+|     |_ |       || ||_|| ||   |    |   _   |  |   |  |   | | |_|   ||   | |       ||   |   |   |    |   |  
+|_______||_______||_|   |_||___|    |__| |__|  |___|  |___| |_______||___| |_______||___|   |___|    |___|  
+*/
 static NSInteger kSaveGramCompatibilityViewTag = 1213;
 
 @interface SaveGramAlertViewDelegate : NSObject <UIAlertViewDelegate>
@@ -217,20 +236,19 @@ static NSInteger kSaveGramCompatibilityViewTag = 1213;
 
 @end
 
-%group Compatibility
-
 static SaveGramAlertViewDelegate * savegram_compatibilityAlertDelegate;
-static BOOL savegram_shouldShowCompatibilityAlert;
+
+%group Compatibility
 
 %hook AppDelegate
 
-- (void)applicationDidFinishLaunching:(UIApplication *)application {
+- (void)startMainAppWithMainFeedSource:(id)source animated:(BOOL)animated {
 	%orig();
 
-	if (savegram_shouldShowCompatibilityAlert) {
-		UIAlertView *compatibilityWarningView = [[[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"You are running an out-of-date version of Instagram. Please downgrade to a previous SaveGram package in Cydia, or upgrade Instagram." delegate:savegram_compatibilityAlertDelegate cancelButtonTitle:@"Cancel" otherButtonTitles:@"Run", @"Cydia", nil] autorelease];
-		[compatibilityWarningView show];
-	}
+	SGLOG(@"");
+	savegram_compatibilityAlertDelegate = [[SaveGramAlertViewDelegate alloc] init];
+	UIAlertView *compatibilityWarningView = [[[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"You are running an out-of-date version of Instagram. Please downgrade to a previous SaveGram package in Cydia, or upgrade Instagram." delegate:savegram_compatibilityAlertDelegate cancelButtonTitle:@"Cancel" otherButtonTitles:@"Run", @"Cydia", nil] autorelease];
+	[compatibilityWarningView show];
 }
 
 %end
@@ -248,16 +266,17 @@ static BOOL savegram_shouldShowCompatibilityAlert;
 */
 %ctor {
 	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-	NSComparisonResult newestWaveVersionComparisonResult = [version compare:@"7.1.1" options:NSNumericSearch];
+	NSComparisonResult newestWaveVersionComparisonResult = [version compare:@"7.1.2" options:NSNumericSearch];
 	SGLOG(@"Instagram %@, comparison result to last official supported build (7.1.1): %i", version, (int)newestWaveVersionComparisonResult);
 
 	// If the current version of Instagram is LOWER (not EQUAL TO or HIGHER) than 7.1.1, they should be running a compatibility package
 	if (newestWaveVersionComparisonResult == NSOrderedAscending) {
+		NSString *lastVersionConfirmed = savegram_lastVersionUserConfirmedWasSupported();
 		NSComparisonResult lastConfirmedCompatibilityResult = [version compare:savegram_lastVersionUserConfirmedWasSupported() options:NSNumericSearch];
+		SGLOG(@"Running out-of-date version of Instagram. Last version that we were allowed to run SaveGram on was %@, which compares to the current version as: %i", lastVersionConfirmed, (int)lastConfirmedCompatibilityResult);
 
 		// If the last time the user confirmed running an out-of-date Instagram was in a LOWER
-		if (lastConfirmedCompatibilityResult == NSOrderedDescending) {
-			savegram_shouldShowCompatibilityAlert = YES;
+		if (!lastVersionConfirmed || lastConfirmedCompatibilityResult == NSOrderedDescending) {
 			%init(Compatibility);
 			return;
 		}
