@@ -56,14 +56,14 @@ static NSURL * savegram_highestResolutionURLFromVersionArray(NSArray *versions) 
 	return highestResAvailableVersion;
 }
 
-static BOOL savegram_hasAllowedOutOfDateVersions() {
+static NSString *savegram_lastVersionUserConfirmedWasSupported() {
 	NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
-	return [standardUserDefaults boolForKey:kSaveGramAllowDefaultsKey];
+	return [standardUserDefaults objectForKey:kSaveGramAllowDefaultsKey];
 } 
 
-static void savegram_setAllowedOutOfDateVersions(BOOL value) {
+static void savegram_setLastVersionUserConfirmedWasSupported(NSString *value) {
 	NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
-	[standardUserDefaults setBool:value forKey:kSaveGramAllowDefaultsKey];
+	[standardUserDefaults setObject:value forKey:kSaveGramAllowDefaultsKey];
 }
 
 static void inline savegram_saveMediaFromPost(IGPost *post) {
@@ -180,13 +180,14 @@ static NSInteger kSaveGramCompatibilityViewTag = 1213;
 	if (buttonIndex != alertView.cancelButtonIndex) {
 		if (alertView.tag != kSaveGramCompatibilityViewTag) {
 			if ([[alertView buttonTitleAtIndex:buttonIndex] isEqualToString:@"Cydia"]) {
-				[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"cydia://package/com.example.package"]];
+				[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"cydia://package/com.insanj.savegram"]];
 			}
 
 			else {
-				savegram_setAllowedOutOfDateVersions(YES);
+				NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
+				savegram_setLastVersionUserConfirmedWasSupported(version);
 
-				UIAlertView *compatibilityConfirmationView = [[[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"Please restart Instagram to run SaveGram anyway. This is not recommended: be prepared to still downgrade to a compatibility package from Cydia, if needed." delegate:self cancelButtonTitle:@"Dismiss" otherButtonTitles:@"Quit App", nil] autorelease];
+				UIAlertView *compatibilityConfirmationView = [[[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"Please restart Instagram to run SaveGram. This is not recommended: be prepared to still downgrade to a compatibility package from Cydia, if needed." delegate:self cancelButtonTitle:@"Dismiss" otherButtonTitles:@"Restart", nil] autorelease];
 				compatibilityConfirmationView.tag = kSaveGramCompatibilityViewTag;
 				[compatibilityConfirmationView show];
 			}
@@ -216,6 +217,8 @@ static NSInteger kSaveGramCompatibilityViewTag = 1213;
 
 @end
 
+%group Compatibility
+
 static SaveGramAlertViewDelegate * savegram_compatibilityAlertDelegate;
 static BOOL savegram_shouldShowCompatibilityAlert;
 
@@ -224,22 +227,15 @@ static BOOL savegram_shouldShowCompatibilityAlert;
 - (void)applicationDidFinishLaunching:(UIApplication *)application {
 	%orig();
 
-	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-	NSComparisonResult newestWaveVersionComparisonResult = [version compare:@"7.1.1" options:NSNumericSearch];
-	savegram_compatibilityAlertDelegate = [[SaveGramAlertViewDelegate alloc] init];
-
-
-	if (newestWaveVersionComparisonResult != NSOrderedDescending) {
-		if (savegram_hasAllowedOutOfDateVersions()) {
-			%init(CurrentSupportPhase);
-		}
-	}
-
+	if (savegram_shouldShowCompatibilityAlert) {
 		UIAlertView *compatibilityWarningView = [[[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"You are running an out-of-date version of Instagram. Please downgrade to a previous SaveGram package in Cydia, or upgrade Instagram." delegate:savegram_compatibilityAlertDelegate cancelButtonTitle:@"Cancel" otherButtonTitles:@"Run", @"Cydia", nil] autorelease];
 		[compatibilityWarningView show];
+	}
 }
 
 %end
+
+%end // %group Compatibility
 
 /*                                                                                                     
  _______  _______  _______  ______   
@@ -255,17 +251,17 @@ static BOOL savegram_shouldShowCompatibilityAlert;
 	NSComparisonResult newestWaveVersionComparisonResult = [version compare:@"7.1.1" options:NSNumericSearch];
 	SGLOG(@"Instagram %@, comparison result to last official supported build (7.1.1): %i", version, (int)newestWaveVersionComparisonResult);
 
-	if (newestWaveVersionComparisonResult != NSOrderedDescending) {
-		if (savegram_hasAllowedOutOfDateVersions()) {
-			%init(CurrentSupportPhase);
-		}
+	// If the current version of Instagram is LOWER (not EQUAL TO or HIGHER) than 7.1.1, they should be running a compatibility package
+	if (newestWaveVersionComparisonResult == NSOrderedAscending) {
+		NSComparisonResult lastConfirmedCompatibilityResult = [version compare:savegram_lastVersionUserConfirmedWasSupported() options:NSNumericSearch];
 
-		else {
+		// If the last time the user confirmed running an out-of-date Instagram was in a LOWER
+		if (lastConfirmedCompatibilityResult == NSOrderedDescending) {
 			savegram_shouldShowCompatibilityAlert = YES;
+			%init(Compatibility);
+			return;
 		}
 	}
 
-	else {
-		%init(CurrentSupportPhase);
-	}
+	%init(CurrentSupportPhase);
 }
