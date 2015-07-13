@@ -1,4 +1,5 @@
 #import "SaveGram.h"
+#import "MBProgressHUD.h"
 
 #define SGLOG(fmt, ...) NSLog((@"[SaveGram] %s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 static NSString *kSaveGramSaveString = @"Save";
@@ -61,30 +62,44 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 		UIAlertView *noInternetAlert = [[UIAlertView alloc] initWithTitle:@"SaveGram" message:@"Check your internet connection and try again, Instagram may also be having issues." delegate:nil cancelButtonTitle:@"Dismiss" otherButtonTitles:nil];
 		[noInternetAlert show];
 		[noInternetAlert release];
+		return;
 	}
 
-	else if (post.mediaType == 1) {
-		NSURL *imageURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.photo.imageVersions);
-		UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
-		IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
-		[postImageAssetWriter writeToInstagramAlbum];
- 		SGLOG(@"wrote image %@ to Instagram album", postImage);
-	}
+	UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+	MBProgressHUD *saveGramHUD = [MBProgressHUD showHUDAddedTo:keyWindow animated:YES];
+	saveGramHUD.labelText = @"Saving post...";
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+		if (post.mediaType == 1) { // photo
+			NSURL *imageURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.photo.imageVersions);
+			UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
+			IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
+			[postImageAssetWriter writeToInstagramAlbum];
+	 		SGLOG(@"wrote image %@ to Instagram album", postImage);
 
-	else {
-		NSURL *videoURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.video.videoVersions);
-		NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
-			NSFileManager *fileManager = [NSFileManager defaultManager];
-		    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
-		    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
-		    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
+		    dispatch_async(dispatch_get_main_queue(), ^{
+		        [MBProgressHUD hideHUDForView:keyWindow animated:YES];
+		    });
+		}
 
-		    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completionBlock:nil];
-	 		SGLOG(@"wrote video %@ to Instagram album", videoSavedURL);
-		}];
+		else { // video
+			NSURL *videoURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.video.videoVersions);
+			NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+				NSFileManager *fileManager = [NSFileManager defaultManager];
+			    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
+			    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
+			    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
 
-		[videoDownloadTask resume];
-	}
+			    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completionBlock:nil];
+		 		SGLOG(@"wrote video %@ to Instagram album", videoSavedURL);
+
+				dispatch_async(dispatch_get_main_queue(), ^{
+			        [MBProgressHUD hideHUDForView:keyWindow animated:YES];
+			    });
+			}];
+
+			[videoDownloadTask resume];
+		}
+	});
 }
 
 /*
@@ -154,7 +169,7 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 	SGLOG(@"Instagram %@, comparison result to last official supported build (6.13.0): %i", version, (int)newestWaveVersionComparisonResult);
 
 	if (newestWaveVersionComparisonResult != NSOrderedDescending) {
-		UIAlertView *compatibilityWarningView = [[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"You are running an old version of Instagram. It's recommended that you downgrade to a legacy SaveGram package, or upgrade Instagram." delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
+		UIAlertView *compatibilityWarningView = [[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"You are running an out-of-date version of Instagram. Please downgrade to a previous SaveGram package in Cydia, or upgrade Instagram." delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
 		[compatibilityWarningView show];
 		[compatibilityWarningView release];
 	}
