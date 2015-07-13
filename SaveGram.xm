@@ -206,29 +206,17 @@ static NSInteger kSaveGramCompatibilityViewTag = 1213;
 				NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
 				savegram_setLastVersionUserConfirmedWasSupported(version);
 
-				UIAlertView *compatibilityConfirmationView = [[[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"Please restart Instagram to run SaveGram. This is not recommended: be prepared to still downgrade to a compatibility package from Cydia, if needed." delegate:self cancelButtonTitle:@"Dismiss" otherButtonTitles:@"Restart", nil] autorelease];
+				UIAlertView *compatibilityConfirmationView = [[[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"Instagram will close to run SaveGram. This is not recommended: be prepared to still downgrade to a compatibility package from Cydia, if needed." delegate:self cancelButtonTitle:@"Dismiss" otherButtonTitles:@"Restart", nil] autorelease];
 				compatibilityConfirmationView.tag = kSaveGramCompatibilityViewTag;
 				[compatibilityConfirmationView show];
 			}
 		}
 
 		else {
-			NSURL *URL = [NSURL URLWithString:@"instagram://"];
-
-			Class pClass = NSClassFromString(@"BKSSystemService");
-			id service = [[pClass alloc] init];
-
-			SEL pSelector = NSSelectorFromString(@"openURL:application:options:clientPort:withResult:");
-			NSMethodSignature *signature = [service methodSignatureForSelector:pSelector];
-			NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:signature];
-			invocation.target = service;
-			NSString *app = @"com.burbn.instagram";
-			[invocation setSelector:pSelector];
-			[invocation setArgument:&URL atIndex:2];
-			[invocation setArgument:&app atIndex:3];
-			id i = [service performSelector:NSSelectorFromString(@"createClientPort")];
-			[invocation setArgument:&i atIndex:5];
-			[invocation invoke];
+			// BKSSystemService *backBoardService = [[%c(BKSSystemService) alloc] init];
+			// [backBoardService performSelector:@selector(openApplication:options:withResult:) withObject:@"com.burbn.instagram" afterDelay:0.5];
+			// [backBoardService openApplication:@"com.apple.mobilesafari" options:nil withResult:nil];
+			// [backBoardService openURL:[NSURL URLWithString:@"instagram://app"] application:@"com.burbn.instagram" options:0 clientPort:[backBoardService createClientPort] withResult:NULL];
 			exit(0);
 		}
 	}
@@ -266,7 +254,7 @@ static SaveGramAlertViewDelegate * savegram_compatibilityAlertDelegate;
 */
 %ctor {
 	NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-	NSComparisonResult newestWaveVersionComparisonResult = [version compare:@"7.1.2" options:NSNumericSearch];
+	NSComparisonResult newestWaveVersionComparisonResult = [version compare:@"7.1.1" options:NSNumericSearch];
 	SGLOG(@"Instagram %@, comparison result to last official supported build (7.1.1): %i", version, (int)newestWaveVersionComparisonResult);
 
 	// If the current version of Instagram is LOWER (not EQUAL TO or HIGHER) than 7.1.1, they should be running a compatibility package
