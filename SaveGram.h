@@ -111,6 +111,7 @@
 + (void)addButtonWithTitle:(NSString *)title style:(int)style;
 + (void)dismissAnimated:(BOOL)animated;
 - (void)showWithTitle:(NSString *)title;
+//the following method appears to have been removed as of 7.13
 - (void)addButtonWithTitle:(NSString *)title style:(int)style;
 - (void)showWithTitle:(NSString *)title;
 - (void)buttonTapped:(UIButton *)button;
