@@ -151,7 +151,7 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 
 %end
 
-%hook IGFeedItemActionCell
+%hook IGFeedViewController
 
 /*
  _______  _______  _______  ______  
