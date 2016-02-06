@@ -151,7 +151,7 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 
 %end
 
-%hook IGFeedItemActionCell
+%hook IGFeedViewController
 
 /*
  _______  _______  _______  ______  
@@ -162,10 +162,25 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 |   |    |   |___ |   |___ |       |
 |___|    |_______||_______||______| 
 */
+
+%new
+- (void)sg_setCurrentFeedItemActionCell:(IGFeedItemActionCell*)actionCell {
+	objc_setAssociatedObject(self, @selector(_sgCurrentFeedItemActionCell), actionCell, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+%new
+- (IGFeedItemActionCell*)sg_currentFeedItemActionCell {
+	return objc_getAssociatedObject(self, @selector(_sgCurrentFeedItemActionCell));
+}
+
+- (void)feedItemActionCellDidTapMoreButton:(id)actionCell {
+	%orig;
+	[self sg_setCurrentFeedItemActionCell:actionCell];
+}
 - (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
 	if ([title isEqualToString:kSaveGramSaveString]) {
  		SGLOG(@"saving media from Feed post");
-		IGFeedItem *post = self.feedItem;
+		IGFeedItem *post = [self sg_currentFeedItemActionCell].feedItem;
 		savegram_saveMediaFromPost(post);
 	}
 
