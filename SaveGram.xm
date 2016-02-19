@@ -151,7 +151,7 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 
 %end
 
-%hook IGFeedViewController
+%hook IGMediaManager
 
 /*
  _______  _______  _______  ______  
@@ -163,31 +163,17 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 |___|    |_______||_______||______| 
 */
 
-%new
-- (void)sg_setCurrentFeedItemActionCell:(IGFeedItemActionCell*)actionCell {
-	objc_setAssociatedObject(self, @selector(_sgCurrentFeedItemActionCell), actionCell, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-%new
-- (IGFeedItemActionCell*)sg_currentFeedItemActionCell {
-	return objc_getAssociatedObject(self, @selector(_sgCurrentFeedItemActionCell));
-}
-
-- (void)feedItemActionCellDidTapMoreButton:(id)actionCell {
-	%orig;
-	[self sg_setCurrentFeedItemActionCell:actionCell];
-}
-- (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
++ (void)moreActionSheetForFeedItem:(IGFeedItem*)feedItem dismissedWithButtonTitled:(NSString*)title navigationController:(id)navController { 
 	if ([title isEqualToString:kSaveGramSaveString]) {
  		SGLOG(@"saving media from Feed post");
-		IGFeedItem *post = [self sg_currentFeedItemActionCell].feedItem;
-		savegram_saveMediaFromPost(post);
+ 		
+		savegram_saveMediaFromPost(feedItem);
 	}
-
 	else {
-		%orig(title);
+		%orig(feedItem,title,navController);
 	}
 }
+
 
 %end
 
