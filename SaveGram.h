@@ -93,13 +93,6 @@
 
 @end
 
-@interface IGFeedViewController
-- (void)actionSheetDismissedWithButtonTitled:(NSString *)title;
-//new methods (not from instagram)
-- (void)sg_setCurrentFeedItemActionCell:(IGFeedItemActionCell*)actionCell;
-- (IGFeedItemActionCell*)sg_currentFeedItemActionCell ;
-
-@end
 @interface IGActionSheet : UIWindow
 
 @property (nonatomic, retain) UIView *overlayView;
