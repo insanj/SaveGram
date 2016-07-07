@@ -30,7 +30,7 @@ static NSString *kSaveGramAllowVersionDefaultsKey = @"SaveGram.LastAllowedVersio
 
  	if (isNotInWebViewController && isNotInProfileViewController) {
  		SGLOG(@"adding Save button to action sheet %@", self);
-		[%c(IGActionSheet) addButtonWithTitle:kSaveGramSaveString style:0];
+		[[%c(IGActionSheet) sharedIGActionSheet] addButtonWithTitle:kSaveGramSaveString style:0];
 	}
 
 	%orig();
