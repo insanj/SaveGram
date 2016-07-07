@@ -30,7 +30,7 @@ static NSString *kSaveGramAllowVersionDefaultsKey = @"SaveGram.LastAllowedVersio
 
  	if (isNotInWebViewController && isNotInProfileViewController) {
  		SGLOG(@"adding Save button to action sheet %@", self);
-		[%c(IGActionSheet) addButtonWithTitle:kSaveGramSaveString style:0];
+		[[%c(IGActionSheet) sharedIGActionSheet] addButtonWithTitle:kSaveGramSaveString style:0];
 	}
 
 	%orig();
@@ -163,17 +163,18 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 |___|    |_______||_______||______| 
 */
 
-+ (void)moreActionSheetForFeedItem:(IGFeedItem*)feedItem dismissedWithButtonTitled:(NSString*)title navigationController:(id)navController { 
++ (void)moreActionSheetForFeedItem:(id)feedItem dismissedWithButtonTitled:(id)title navigationController:(id)navController sourceName:(NSString*)source { 
 	if ([title isEqualToString:kSaveGramSaveString]) {
  		SGLOG(@"saving media from Feed post");
- 		
-		savegram_saveMediaFromPost(feedItem);
+
+		IGFeedItem *post = feedItem;
+		savegram_saveMediaFromPost(post);
 	}
+
 	else {
-		%orig(feedItem,title,navController);
+		%orig(feedItem,title,navController,source);
 	}
 }
-
 
 %end
 
