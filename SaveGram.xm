@@ -6,7 +6,7 @@ static NSString *kSaveGramSaveString = @"Save";
 static NSString *kSaveGramAllowVersionDefaultsKey = @"SaveGram.LastAllowedVersion";
 
 /*
- _______  ______   ______     _______  __   __  _______  _______  _______  __    _ 
+ _______  ______   ______     _______  __   __  _______  _______  _______  __    _
 |   _   ||      | |      |   |  _    ||  | |  ||       ||       ||       ||  |  | |
 |  |_|  ||  _    ||  _    |  | |_|   ||  | |  ||_     _||_     _||   _   ||   |_| |
 |       || | |   || | |   |  |       ||  |_|  |  |   |    |   |  |  | |  ||       |
@@ -39,15 +39,15 @@ static NSString *kSaveGramAllowVersionDefaultsKey = @"SaveGram.LastAllowedVersio
 %end
 
 /*
- _______  _______  _______    _______  _______  _______  _______ 
+ _______  _______  _______    _______  _______  _______  _______
 |       ||       ||       |  |       ||       ||       ||       |
 |    ___||    ___||_     _|  |    _  ||   _   ||  _____||_     _|
-|   | __ |   |___   |   |    |   |_| ||  | |  || |_____   |   |  
-|   ||  ||    ___|  |   |    |    ___||  |_|  ||_____  |  |   |  
-|   |_| ||   |___   |   |    |   |    |       | _____| |  |   |  
-|_______||_______|  |___|    |___|    |_______||_______|  |___|  
+|   | __ |   |___   |   |    |   |_| ||  | |  || |_____   |   |
+|   ||  ||    ___|  |   |    |    ___||  |_|  ||_____  |  |   |
+|   |_| ||   |___   |   |    |   |    |       | _____| |  |   |
+|_______||_______|  |___|    |___|    |_______||_______|  |___|
 &*/
-
+/*
 static NSURL * savegram_highestResolutionURLFromVersionArray(NSArray *versions) {
 	NSURL *highestResAvailableVersion;
 	CGFloat highResAvailableArea;
@@ -65,11 +65,11 @@ static NSURL * savegram_highestResolutionURLFromVersionArray(NSArray *versions) 
 	SGLOG(@"%@ has highest resolution available in %@", highestResAvailableVersion, versions);
 	return highestResAvailableVersion;
 }
-
+*/
 static NSString * savegram_lastVersionUserConfirmedWasSupported() {
 	NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
 	return [standardUserDefaults objectForKey:kSaveGramAllowVersionDefaultsKey];
-} 
+}
 
 static void savegram_setLastVersionUserConfirmedWasSupported(NSString *value) {
 	NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
@@ -91,8 +91,13 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 	saveGramHUD.labelText = @"Saving post...";
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-		if (post.mediaType == 1) { // photo
-			NSURL *imageURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.photo.imageVersions);
+    NSString* urlStr = nil;
+    if (post.mediaType == 1) { // photo
+      IGPhoto* photo = [post photo];
+   		NSArray* imageVersions = [photo imageVersions];
+   		IGTypedURL* url = [imageVersions lastObject];
+   		urlStr = [(NSURL*)[url url] absoluteString];
+			NSURL *imageURL = [NSURL URLWithString:urlStr];
 			UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
 			IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
 			[postImageAssetWriter writeToInstagramAlbum];
@@ -105,14 +110,18 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 		}
 
 		else { // video
-			NSURL *videoURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.video.videoVersions);
+      IGVideo* video = [post video];
+   		NSArray* videoVersions = [video videoVersions];
+   		NSDictionary* urlDict = [videoVersions firstObject];
+   		urlStr = [urlDict objectForKey:@"url"];
+			NSURL *videoURL = [NSURL URLWithString:urlStr];
 			NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
 				NSFileManager *fileManager = [NSFileManager defaultManager];
 			    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
 			    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
 			    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
 
-			    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completionBlock:nil];
+			    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completion:nil];
 		 		SGLOG(@"wrote video %@ to Instagram album", videoSavedURL);
 
 				dispatch_async(dispatch_get_main_queue(), ^{
@@ -127,13 +136,13 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 }
 
 /*
- ______   ___   ______    _______  _______  _______ 
+ ______   ___   ______    _______  _______  _______
 |      | |   | |    _ |  |       ||       ||       |
 |  _    ||   | |   | ||  |    ___||       ||_     _|
-| | |   ||   | |   |_||_ |   |___ |       |  |   |  
-| |_|   ||   | |    __  ||    ___||      _|  |   |  
-|       ||   | |   |  | ||   |___ |     |_   |   |  
-|______| |___| |___|  |_||_______||_______|  |___|  
+| | |   ||   | |   |_||_ |   |___ |       |  |   |
+| |_|   ||   | |    __  ||    ___||      _|  |   |
+|       ||   | |   |  | ||   |___ |     |_   |   |
+|______| |___| |___|  |_||_______||_______|  |___|
 */
 %hook IGDirectedPostViewController
 
@@ -154,17 +163,17 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 %hook IGMediaManager
 
 /*
- _______  _______  _______  ______  
-|       ||       ||       ||      | 
+ _______  _______  _______  ______
+|       ||       ||       ||      |
 |    ___||    ___||    ___||  _    |
 |   |___ |   |___ |   |___ | | |   |
 |    ___||    ___||    ___|| |_|   |
 |   |    |   |___ |   |___ |       |
-|___|    |_______||_______||______| 
+|___|    |_______||_______||______|
 */
 
-+ (void)moreActionSheetForFeedItem:(id)feedItem dismissedWithButtonTitled:(id)title navigationController:(id)navController sourceName:(NSString*)source { 
-	if ([title isEqualToString:kSaveGramSaveString]) {
+- (void)handleActionSheetDismissedWithButtonTitled:(id)title forFeedItem:(id)feedItem navigationController:(id)navController sourceName:(NSString*)source {
+  if ([title isEqualToString:kSaveGramSaveString]) {
  		SGLOG(@"saving media from Feed post");
 
 		IGFeedItem *post = feedItem;
@@ -172,7 +181,7 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 	}
 
 	else {
-		%orig(feedItem,title,navController,source);
+		%orig(title,feedItem,navController,source);
 	}
 }
 
@@ -181,13 +190,13 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 %end // %group CurrentSupportPhase
 
 /*
- _______  _______  __   __  _______  _______  _______  ___   _______  ___   ___      ___   _______  __   __ 
+ _______  _______  __   __  _______  _______  _______  ___   _______  ___   ___      ___   _______  __   __
 |       ||       ||  |_|  ||       ||   _   ||       ||   | |  _    ||   | |   |    |   | |       ||  | |  |
 |       ||   _   ||       ||    _  ||  |_|  ||_     _||   | | |_|   ||   | |   |    |   | |_     _||  |_|  |
 |       ||  | |  ||       ||   |_| ||       |  |   |  |   | |       ||   | |   |    |   |   |   |  |       |
 |      _||  |_|  ||       ||    ___||       |  |   |  |   | |  _   | |   | |   |___ |   |   |   |  |_     _|
-|     |_ |       || ||_|| ||   |    |   _   |  |   |  |   | | |_|   ||   | |       ||   |   |   |    |   |  
-|_______||_______||_|   |_||___|    |__| |__|  |___|  |___| |_______||___| |_______||___|   |___|    |___|  
+|     |_ |       || ||_|| ||   |    |   _   |  |   |  |   | | |_|   ||   | |       ||   |   |   |    |   |
+|_______||_______||_|   |_||___|    |__| |__|  |___|  |___| |_______||___| |_______||___|   |___|    |___|
 */
 static NSInteger kSaveGramCompatibilityViewTag = 1213;
 
@@ -245,11 +254,11 @@ static SaveGramAlertViewDelegate * savegram_compatibilityAlertDelegate;
 
 %end // %group Compatibility
 
-/*                                                                                                     
- _______  _______  _______  ______   
-|       ||       ||       ||    _ |  
-|       ||_     _||   _   ||   | ||  
-|       |  |   |  |  | |  ||   |_||_ 
+/*
+ _______  _______  _______  ______
+|       ||       ||       ||    _ |
+|       ||_     _||   _   ||   | ||
+|       |  |   |  |  | |  ||   |_||_
 |      _|  |   |  |  |_|  ||    __  |
 |     |_   |   |  |       ||   |  | |
 |_______|  |___|  |_______||___|  |_|

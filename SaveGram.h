@@ -78,6 +78,12 @@
 @interface IGFeedItem : IGPost
 @end
 
+@interface IGTypedURL : NSObject
+@property(readonly, nonatomic) NSURL *url;
+@property(readonly, nonatomic) double height;
+@property(readonly, nonatomic) double width;
+@end
+
 @protocol IGActionSheetDelegate
 @optional
 - (void)actionSheetFinishedHiding;
@@ -99,6 +105,8 @@
 @property (nonatomic, retain) UIView *buttonView;
 @property (nonatomic, retain) NSMutableArray *buttons;
 @property (nonatomic, retain) NSObject<IGActionSheetDelegate>* actionDelegate;
+
++(id)sharedIGActionSheet;
 
 // iOS 8
 + (void)showWithDelegate:(id)arg1;
@@ -123,14 +131,14 @@
 @end
 
 @interface IGAssetWriter : NSObject {
-	NSMutableDictionary* _metadata; 
+	NSMutableDictionary* _metadata;
 }
 
 @property (nonatomic,retain) UIImage *image;
 // @property (nonatomic,retain) CLLocation* location; 				//@synthesize location=_location - In the implementation block
 + (void)writeVideo:(id)arg1 toInstagramAlbum:(BOOL)arg2 completionBlock:(id)arg3;
 + (void)writeVideoToCameraRoll:(id)arg1;
-+ (void)writeVideoToInstagramAlbum:(id)arg1 completionBlock:(id)arg2;
++ (void)writeVideoToInstagramAlbum:(id)arg1 completion:(id)arg2;
 - (id)initWithImage:(id)arg1 metadata:(id)arg2;
 - (void)writeToInstagramAlbum:(BOOL)arg1;
 - (void)showLibraryAccessMessage;
@@ -170,7 +178,7 @@ typedef NS_ENUM(NSInteger, AFNetworkReachabilityStatus) {
 
 // @property (readonly, nonatomic, assign, getter = isReachable) BOOL reachable;
 
-@property (nonatomic, readonly) AFNetworkReachabilityStatus networkReachabilityStatus; 
+@property (nonatomic, readonly) AFNetworkReachabilityStatus networkReachabilityStatus;
 
 + (AFNetworkReachabilityManager *)sharedManager;
 
