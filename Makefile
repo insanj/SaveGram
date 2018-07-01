@@ -2,7 +2,7 @@ THEOS_PACKAGE_DIR_NAME = debs
 TARGET = iphone:clang:latest:7.0
 ARCHS = armv7 arm64
 
-include theos/makefiles/common.mk
+include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = SaveGram
 SaveGram_FILES = SaveGram.xm MBProgressHUD.m
