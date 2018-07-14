@@ -196,6 +196,27 @@ static NSMutableDictionary *SaveGramCurrentItemInfo;
 
 %end
 
+/*
+   Story
+ */
+
+%hook IGStoryItemActionsController
+
+- (void)actionSheetDismissedWithButtonTitled:(NSString *)arg1
+{
+	id item = self.item;
+	if ([arg1 isEqualToString:kSaveGramSaveString] && [item isKindOfClass:NSClassFromString(@"IGFeedItem")]) {
+		IGFeedItem *feedItem = item;
+		SGLOG(@"saving media from Story post %@", feedItem);
+		savegram_saveMediaFromFeedItem(feedItem, 0);
+		%orig(@"snakeninny"); // Continue playing story
+	} else {
+		%orig;
+	}
+}
+
+%end
+
 %end // %group CurrentSupportPhase
 
 /*

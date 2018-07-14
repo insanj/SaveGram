@@ -200,3 +200,9 @@
 - (long long)getCurrentPage;
 
 @end
+
+@interface IGStoryItemActionsController : NSObject
+
+@property (retain, nonatomic) id item;
+
+@end
