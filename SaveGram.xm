@@ -90,21 +90,13 @@ static void savegram_setLastVersionUserConfirmedWasSupported(NSString *value) {
 	[standardUserDefaults setObject:value forKey:kSaveGramAllowVersionDefaultsKey];
 }
 
-static BOOL savegram_isPhotoFeedItem(IGFeedItem *item) {
+static BOOL savegram_isPhotoPostItem(IGPostItem *item) {
 	if (item.mediaType == 1) return YES;
-	if (item.mediaType == 8) {
-		IGVideo *video = item.video;
-		if (video.videoDuration == 0) return YES;
-	}
 	return NO;
 }
 
-static BOOL savegram_isVideoFeedItem(IGFeedItem *item) {
+static BOOL savegram_isVideoPostItem(IGPostItem *item) {
 	if (item.mediaType == 2) return YES;
-	if (item.mediaType == 8) {
-		IGVideo *video = item.video;
-		if (video.videoDuration != 0) return YES;
-	}
 	return NO;
 }
 
@@ -122,8 +114,8 @@ static void inline savegram_saveMediaFromFeedItem(IGFeedItem *item, int index) {
 	saveGramHUD.labelText = @"Saving...";
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-		if (savegram_isPhotoFeedItem(item)) {
-			IGPostItem *postItem = item.items[index];
+		IGPostItem *postItem = item.items[index];
+		if (savegram_isPhotoPostItem(postItem)) {
 			NSURL *imageURL = savegram_highestResolutionURLFromVersionArray(postItem.photo.imageVersions);
 			UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
 			IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
@@ -134,8 +126,7 @@ static void inline savegram_saveMediaFromFeedItem(IGFeedItem *item, int index) {
 		    		saveGramHUD.labelText = @"Saved!";
 			        [saveGramHUD hide:YES afterDelay:1.0];
 			});
-		} else if (savegram_isVideoFeedItem(item)) {
-			IGPostItem *postItem = item.items[index];		
+		} else if (savegram_isVideoPostItem(postItem)) {
 			NSURL *videoURL = savegram_highestResolutionURLFromVersionArray(postItem.video.videoVersions);
 			NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
 			    NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -149,7 +140,7 @@ static void inline savegram_saveMediaFromFeedItem(IGFeedItem *item, int index) {
 			    dispatch_async(dispatch_get_main_queue(), ^{
 				saveGramHUD.labelText = @"Saved!";
 				[saveGramHUD hide:YES afterDelay:1.0];
-			    });
+				});
 			}];
 
 			[videoDownloadTask resume];

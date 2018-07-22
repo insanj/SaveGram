@@ -188,6 +188,7 @@
 
 @interface IGPostItem : NSObject
 
+@property (readonly, nonatomic) long long mediaType;
 @property (readonly, nonatomic) IGPhoto *photo;
 @property (readonly, nonatomic) IGVideo *video;
 
