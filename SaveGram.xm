@@ -18,7 +18,7 @@ static NSString *kSaveGramAllowVersionDefaultsKey = @"SaveGram.LastAllowedVersio
 
 %hook IGActionSheet
 
-- (void)show {
+- (void)_show {
  	AppDelegate *instagramAppDelegate = [UIApplication sharedApplication].delegate;
  	IGRootViewController *rootViewController = (IGRootViewController *)((IGShakeWindow *)instagramAppDelegate.window).rootViewController;
  	UIViewController *topMostViewController = rootViewController.topMostViewController;
@@ -51,14 +51,28 @@ static NSString *kSaveGramAllowVersionDefaultsKey = @"SaveGram.LastAllowedVersio
 static NSURL * savegram_highestResolutionURLFromVersionArray(NSArray *versions) {
 	NSURL *highestResAvailableVersion;
 	CGFloat highResAvailableArea;
-	for (NSDictionary *versionDict in versions) {
-		CGFloat height = [versionDict[@"height"] floatValue];
-		CGFloat width = [versionDict[@"width"] floatValue];
-		CGFloat res = height * width;
 
-		if (res > highResAvailableArea) {
-			highResAvailableArea = res;
-			highestResAvailableVersion = [NSURL URLWithString:versionDict[@"url"]];
+	for (id version in versions) {
+		if ([version isKindOfClass:NSClassFromString(@"NSDictionary")]) {
+			NSDictionary *versionDict = (NSDictionary *)version;
+			CGFloat height = [versionDict[@"height"] floatValue];
+			CGFloat width = [versionDict[@"width"] floatValue];
+			CGFloat res = height * width;
+
+			if (res > highResAvailableArea) {
+				highResAvailableArea = res;
+				highestResAvailableVersion = [NSURL URLWithString:versionDict[@"url"]];
+			}
+		} else if ([version isKindOfClass:NSClassFromString(@"IGImageURL")]) {
+			IGImageURL *imageURL = (IGImageURL *)version;
+			CGFloat height = [imageURL height];
+			CGFloat width = [imageURL width];
+			CGFloat res = height * width;
+
+			if (res > highResAvailableArea) {
+				highResAvailableArea = res;
+				highestResAvailableVersion = [imageURL url];
+			}
 		}
 	}
 
@@ -76,77 +90,74 @@ static void savegram_setLastVersionUserConfirmedWasSupported(NSString *value) {
 	[standardUserDefaults setObject:value forKey:kSaveGramAllowVersionDefaultsKey];
 }
 
-static void inline savegram_saveMediaFromPost(IGPost *post) {
-	if ([%c(AFNetworkReachabilityManager) sharedManager].networkReachabilityStatus == AFNetworkReachabilityStatusNotReachable) {
+static BOOL savegram_isPhotoPostItem(IGPostItem *item) {
+	if (item.mediaType == 1) return YES;
+	return NO;
+}
+
+static BOOL savegram_isVideoPostItem(IGPostItem *item) {
+	if (item.mediaType == 2) return YES;
+	return NO;
+}
+
+static void inline savegram_saveMediaFromFeedItem(IGFeedItem *item, int index) {
+	if ([[[%c(IGFNFBandwidthProvider) alloc] init] currentReachabilityState] == 1) {
  		SGLOG(@"networking not reachable");
 		UIAlertView *noInternetAlert = [[UIAlertView alloc] initWithTitle:@"SaveGram" message:@"Check your internet connection and try again, Instagram may also be having issues." delegate:nil cancelButtonTitle:@"Dismiss" otherButtonTitles:nil];
 		[noInternetAlert show];
-		[noInternetAlert release];
 		return;
 	}
 
 	UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
 	MBProgressHUD __block *saveGramHUD = [MBProgressHUD showHUDAddedTo:keyWindow animated:YES];
 	saveGramHUD.animationType = MBProgressHUDAnimationZoom;
-	saveGramHUD.labelText = @"Saving post...";
+	saveGramHUD.labelText = @"Saving...";
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-		if (post.mediaType == 1) { // photo
-			NSURL *imageURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.photo.imageVersions);
+		IGPostItem *postItem = item.items[index];
+		if (savegram_isPhotoPostItem(postItem)) {
+			NSURL *imageURL = savegram_highestResolutionURLFromVersionArray(postItem.photo.imageVersions);
 			UIImage *postImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageURL]];
 			IGAssetWriter *postImageAssetWriter = [[%c(IGAssetWriter) alloc] initWithImage:postImage metadata:nil];
 			[postImageAssetWriter writeToInstagramAlbum];
 	 		SGLOG(@"wrote image %@ to Instagram album", postImage);
 
-		    dispatch_async(dispatch_get_main_queue(), ^{
-		    	saveGramHUD.labelText = @"Saved!";
-		        [saveGramHUD hide:YES afterDelay:1.0];
-		    });
-		}
-
-		else { // video
-			NSURL *videoURL = savegram_highestResolutionURLFromVersionArray((NSArray *)post.video.videoVersions);
+		    	dispatch_async(dispatch_get_main_queue(), ^{
+		    		saveGramHUD.labelText = @"Saved!";
+			        [saveGramHUD hide:YES afterDelay:1.0];
+			});
+		} else if (savegram_isVideoPostItem(postItem)) {
+			NSURL *videoURL = savegram_highestResolutionURLFromVersionArray(postItem.video.videoVersions);
 			NSURLSessionTask *videoDownloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
-				NSFileManager *fileManager = [NSFileManager defaultManager];
+			    NSFileManager *fileManager = [NSFileManager defaultManager];
 			    NSURL *videoDocumentsURL = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
 			    NSURL *videoSavedURL = [videoDocumentsURL URLByAppendingPathComponent:[videoURL lastPathComponent]];
 			    [fileManager moveItemAtURL:location toURL:videoSavedURL error:&error];
 
-			    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completionBlock:nil];
-		 		SGLOG(@"wrote video %@ to Instagram album", videoSavedURL);
+			    [%c(IGAssetWriter) writeVideoToInstagramAlbum:videoSavedURL completion:nil];
+			    SGLOG(@"wrote video %@ to Instagram album", videoSavedURL);
 
-				dispatch_async(dispatch_get_main_queue(), ^{
-			    	saveGramHUD.labelText = @"Saved!";
-    		        [saveGramHUD hide:YES afterDelay:1.0];
-			    });
+			    dispatch_async(dispatch_get_main_queue(), ^{
+				saveGramHUD.labelText = @"Saved!";
+				[saveGramHUD hide:YES afterDelay:1.0];
+				});
 			}];
 
 			[videoDownloadTask resume];
+		} else {
+			SGLOG(@"error resolving %@", item);
 		}
 	});
 }
 
-/*
- ______   ___   ______    _______  _______  _______ 
-|      | |   | |    _ |  |       ||       ||       |
-|  _    ||   | |   | ||  |    ___||       ||_     _|
-| | |   ||   | |   |_||_ |   |___ |       |  |   |  
-| |_|   ||   | |    __  ||    ___||      _|  |   |  
-|       ||   | |   |  | ||   |___ |     |_   |   |  
-|______| |___| |___|  |_||_______||_______|  |___|  
-*/
-%hook IGDirectedPostViewController
+static NSMutableDictionary *SaveGramCurrentItemInfo;
 
-- (void)actionSheetDismissedWithButtonTitled:(NSString *)title {
-	if ([title isEqualToString:kSaveGramSaveString]) {
- 		SGLOG(@"saving media from Direct message");
-		IGPost *post = self.post;
-		savegram_saveMediaFromPost(post);
-	}
+%hook IGFeedItemPageCell_DEPRECATED // slides
 
-	else {
-		%orig(title);
-	}
+- (void)pageMediaView:(id)arg1 itemDidDisappear:(IGPostItem *)arg2
+{
+	%orig;
+	SaveGramCurrentItemInfo[self.feedItem.itemId] = @(self.getCurrentPage);
 }
 
 %end
@@ -163,16 +174,35 @@ static void inline savegram_saveMediaFromPost(IGPost *post) {
 |___|    |_______||_______||______| 
 */
 
-+ (void)moreActionSheetForFeedItem:(id)feedItem dismissedWithButtonTitled:(id)title navigationController:(id)navController sourceName:(NSString*)source { 
-	if ([title isEqualToString:kSaveGramSaveString]) {
- 		SGLOG(@"saving media from Feed post");
-
-		IGFeedItem *post = feedItem;
-		savegram_saveMediaFromPost(post);
+- (void)handleActionSheetDismissedWithButtonTitled:(NSString *)arg1 forFeedItem:(IGFeedItem *)arg2 navigationController:(id)arg3 sourceName:(id)arg4 position:(unsigned long long)arg5
+{
+	if ([arg1 isEqualToString:kSaveGramSaveString]) {
+		SGLOG(@"saving media from Feed post %@", arg2);
+		NSNumber *currentPage = SaveGramCurrentItemInfo[arg2.itemId];
+		savegram_saveMediaFromFeedItem(arg2, currentPage ? currentPage.intValue : 0);
+	} else {
+		%orig;
 	}
+}
 
-	else {
-		%orig(feedItem,title,navController,source);
+%end
+
+/*
+   Story
+ */
+
+%hook IGStoryItemActionsController
+
+- (void)actionSheetDismissedWithButtonTitled:(NSString *)arg1
+{
+	id item = self.item;
+	if ([arg1 isEqualToString:kSaveGramSaveString] && [item isKindOfClass:NSClassFromString(@"IGFeedItem")]) {
+		IGFeedItem *feedItem = item;
+		SGLOG(@"saving media from Story post %@", feedItem);
+		savegram_saveMediaFromFeedItem(feedItem, 0);
+		%orig(@"snakeninny"); // Continue playing story
+	} else {
+		%orig;
 	}
 }
 
@@ -208,18 +238,14 @@ static NSInteger kSaveGramCompatibilityViewTag = 1213;
 				NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
 				savegram_setLastVersionUserConfirmedWasSupported(version);
 
-				UIAlertView *compatibilityConfirmationView = [[[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"Instagram will close to run SaveGram. This is not recommended: be prepared to still downgrade to a compatibility package from Cydia, if needed." delegate:self cancelButtonTitle:@"Dismiss" otherButtonTitles:@"Restart", nil] autorelease];
+				UIAlertView *compatibilityConfirmationView = [[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"Instagram will close to run SaveGram. This is not recommended: be prepared to still downgrade to a compatibility package from Cydia, if needed." delegate:self cancelButtonTitle:@"Dismiss" otherButtonTitles:@"Restart", nil];
 				compatibilityConfirmationView.tag = kSaveGramCompatibilityViewTag;
 				[compatibilityConfirmationView show];
 			}
 		}
 
 		else {
-			// BKSSystemService *backBoardService = [[%c(BKSSystemService) alloc] init];
-			// [backBoardService performSelector:@selector(openApplication:options:withResult:) withObject:@"com.burbn.instagram" afterDelay:0.5];
-			// [backBoardService openApplication:@"com.apple.mobilesafari" options:nil withResult:nil];
-			// [backBoardService openURL:[NSURL URLWithString:@"instagram://app"] application:@"com.burbn.instagram" options:0 clientPort:[backBoardService createClientPort] withResult:NULL];
-			exit(0);
+			[[UIApplication sharedApplication] terminateWithSuccess];
 		}
 	}
 }
@@ -237,7 +263,7 @@ static SaveGramAlertViewDelegate * savegram_compatibilityAlertDelegate;
 
 	SGLOG(@"");
 	savegram_compatibilityAlertDelegate = [[SaveGramAlertViewDelegate alloc] init];
-	UIAlertView *compatibilityWarningView = [[[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"You are running an out-of-date version of Instagram. Please downgrade to a previous SaveGram package in Cydia, or upgrade Instagram." delegate:savegram_compatibilityAlertDelegate cancelButtonTitle:@"Cancel" otherButtonTitles:@"Run", @"Cydia", nil] autorelease];
+	UIAlertView *compatibilityWarningView = [[UIAlertView alloc] initWithTitle:@"SaveGram Compatibility" message:@"You are running an out-of-date version of Instagram. Please downgrade to a previous SaveGram package in Cydia, or upgrade Instagram." delegate:savegram_compatibilityAlertDelegate cancelButtonTitle:@"Cancel" otherButtonTitles:@"Run", @"Cydia", nil];
 	[compatibilityWarningView show];
 }
 
@@ -271,6 +297,8 @@ static SaveGramAlertViewDelegate * savegram_compatibilityAlertDelegate;
 			return;
 		}
 	}
+
+	SaveGramCurrentItemInfo = [@{} mutableCopy];
 
 	%init(CurrentSupportPhase);
 }

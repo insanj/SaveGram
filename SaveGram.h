@@ -1,7 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <AssetsLibrary/AssetsLibrary.h>
-#import <BackBoardServices/BackBoardServices.h>
 #import "substrate.h"
 
 #define SGLOG(fmt, ...) NSLog((@"[SaveGram] %s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
@@ -46,6 +45,7 @@
 @interface IGVideo : NSObject
 
 @property (strong, nonatomic) NSArray *videoVersions;
+@property (readonly, nonatomic) double videoDuration;
 
 - (id)videoURLForVideoVersion:(int)version;
 
@@ -76,6 +76,11 @@
 @end
 
 @interface IGFeedItem : IGPost
+
+@property (retain) NSArray *items;
+
+- (NSString *)itemId;
+
 @end
 
 @protocol IGActionSheetDelegate
@@ -99,6 +104,8 @@
 @property (nonatomic, retain) UIView *buttonView;
 @property (nonatomic, retain) NSMutableArray *buttons;
 @property (nonatomic, retain) NSObject<IGActionSheetDelegate>* actionDelegate;
+
++ (instancetype)sharedIGActionSheet;
 
 // iOS 8
 + (void)showWithDelegate:(id)arg1;
@@ -130,7 +137,7 @@
 // @property (nonatomic,retain) CLLocation* location; 				//@synthesize location=_location - In the implementation block
 + (void)writeVideo:(id)arg1 toInstagramAlbum:(BOOL)arg2 completionBlock:(id)arg3;
 + (void)writeVideoToCameraRoll:(id)arg1;
-+ (void)writeVideoToInstagramAlbum:(id)arg1 completionBlock:(id)arg2;
++ (void)writeVideoToInstagramAlbum:(id)arg1 completion:(id)arg2;
 - (id)initWithImage:(id)arg1 metadata:(id)arg2;
 - (void)writeToInstagramAlbum:(BOOL)arg1;
 - (void)showLibraryAccessMessage;
@@ -159,19 +166,44 @@
 
 @end
 
-typedef NS_ENUM(NSInteger, AFNetworkReachabilityStatus) {
-    AFNetworkReachabilityStatusUnknown          = -1,
-    AFNetworkReachabilityStatusNotReachable     = 0,
-    AFNetworkReachabilityStatusReachableViaWWAN = 1,
-    AFNetworkReachabilityStatusReachableViaWiFi = 2,
-};
+@interface IGFNFBandwidthProvider : NSObject
 
-@interface AFNetworkReachabilityManager : NSObject
+- (long long)currentReachabilityState;
 
-// @property (readonly, nonatomic, assign, getter = isReachable) BOOL reachable;
+@end
 
-@property (nonatomic, readonly) AFNetworkReachabilityStatus networkReachabilityStatus; 
+@interface IGImageURL : NSObject
 
-+ (AFNetworkReachabilityManager *)sharedManager;
+- (NSURL *)url;
+- (double)width;
+- (double)height;
+
+@end
+
+@interface UIApplication ()
+
+- (void)terminateWithSuccess;
+
+@end
+
+@interface IGPostItem : NSObject
+
+@property (readonly, nonatomic) long long mediaType;
+@property (readonly, nonatomic) IGPhoto *photo;
+@property (readonly, nonatomic) IGVideo *video;
+
+@end
+
+@interface IGFeedItemPageCell_DEPRECATED : UICollectionViewCell
+
+@property (readonly, nonatomic) IGFeedItem *feedItem;
+
+- (long long)getCurrentPage;
+
+@end
+
+@interface IGStoryItemActionsController : NSObject
+
+@property (retain, nonatomic) id item;
 
 @end
